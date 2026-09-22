@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Der KI-Führerschein · Gymnasium Norf</title>
+<link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,600;0,700;0,800;1,300;1,700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fb;
+    --white: #ffffff;
+    --ink: #1c1c1c;
+    --mid: #6b7280;
+    --soft: #e4eaf2;
+    --line: #dde3ec;
+    --blue: #3a7fc1;
+    --blue-dark: #1e5a96;
+    --blue-light: #eaf1f9;
+    --blue-pale: #f0f5fb;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Lato', sans-serif;
+    color: var(--ink);
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 18px 60px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  nav.scrolled {
+    border-color: var(--line);
+    box-shadow: 0 2px 20px rgba(58,127,193,0.08);
+  }
+  .nav-brand { display: flex; flex-direction: column; gap: 1px; }
+  .nav-brand-name {
+    font-family: 'Raleway', sans-serif;
+    font-weight: 800; font-size: 0.85rem;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink);
+  }
+  .nav-brand-sub {
+    font-size: 0.65rem; font-weight: 400;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--mid);
+  }
+  .nav-links { display: flex; gap: 36px; list-style: none; }
+  .nav-links a {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.73rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    text-decoration: none; color: var(--mid);
+    transition: color 0.2s; position: relative;
+  }
+  .nav-links a::after {
+    content: ''; position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 2px;
+    background: var(--blue);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--blue-dark); }
+  .nav-links a:hover::after { width: 100%; }
+
+  /* ── HERO ── */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+  }
+
+  .hero-banner {
+    width: 100%;
+    height: clamp(180px, 30vw, 360px);
+    margin-top: 62px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #eef4fb 0%, #dceaf6 60%, #e8f1fa 100%);
+  }
+
+  #hero-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  .hero-banner-overlay {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 55%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .hero-content {
+    padding: 28px 60px 60px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-eyebrow {
+    display: flex; align-items: center;
+    gap: 14px; margin-bottom: 28px;
+  }
+  .js-ready .hero-eyebrow {
+    opacity: 0; transform: translateY(20px);
+    animation: rise 0.7s ease 0.2s forwards;
+  }
+  .hero-eyebrow-line { width: 36px; height: 2px; background: var(--blue); }
+  .hero-eyebrow span {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.22em; text-transform: uppercase; color: var(--blue);
+  }
+
+  .hero-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(2.8rem, 6.5vw, 5.8rem);
+    font-weight: 800; line-height: 1.0;
+    letter-spacing: -0.02em; max-width: 860px; color: var(--ink);
+  }
+  .js-ready .hero-title {
+    opacity: 0; transform: translateY(30px);
+    animation: rise 0.8s ease 0.35s forwards;
+  }
+  .hero-title em { font-style: italic; font-weight: 300; color: var(--blue); }
+
+  .hero-sub {
+    margin-top: 32px; font-size: 1.1rem; font-weight: 300;
+    color: var(--mid); max-width: 560px; line-height: 1.7;
+  }
+  .js-ready .hero-sub {
+    opacity: 0; transform: translateY(20px);
+    animation: rise 0.7s ease 0.5s forwards;
+  }
+
+  .hero-tag {
+    margin-top: 40px; display: inline-flex; align-items: center;
+    gap: 10px; padding: 10px 20px;
+    background: var(--blue-light);
+    border: 1px solid rgba(58,127,193,0.2);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--blue-dark);
+  }
+  .js-ready .hero-tag { opacity: 0; animation: rise 0.7s ease 0.65s forwards; }
+  .hero-tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+
+  .scroll-hint {
+    padding: 0 60px 40px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .js-ready .scroll-hint { opacity: 0; animation: rise 0.7s ease 0.85s forwards; }
+  .scroll-hint span {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--mid);
+  }
+  .scroll-arrow {
+    width: 26px; height: 26px;
+    border: 1.5px solid var(--line); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: bounce 2s ease-in-out infinite;
+  }
+  .scroll-arrow svg { width: 10px; height: 10px; stroke: var(--mid); fill: none; stroke-width: 2; }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(4px); }
+  }
+  @keyframes rise {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: 110px 60px; }
+  .section-header { margin-bottom: 64px; }
+  .section-eyebrow { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .section-eyebrow span {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.2em; text-transform: uppercase; color: var(--blue);
+  }
+  .section-eyebrow-line { width: 28px; height: 2px; background: var(--blue); }
+  .section-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(1.8rem, 3.5vw, 3rem);
+    font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.01em; max-width: 620px; color: var(--ink);
+  }
+  .section-title em { font-style: italic; font-weight: 300; color: var(--blue); }
+
+  /* ── REVEAL ── */
+  .js-ready .reveal {
+    opacity: 0; transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .js-ready .reveal.visible { opacity: 1; transform: translateY(0); }
+  .js-ready .reveal-delay-1 { transition-delay: 0.08s; }
+  .js-ready .reveal-delay-2 { transition-delay: 0.16s; }
+  .js-ready .reveal-delay-3 { transition-delay: 0.24s; }
+  .js-ready .reveal-delay-4 { transition-delay: 0.32s; }
+  .js-ready .reveal-delay-5 { transition-delay: 0.40s; }
+
+  /* ── CARDS ── */
+  #massnahmen { background: var(--white); }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  details.card {
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+  }
+  details.card summary { list-style: none; }
+  details.card summary::-webkit-details-marker { display: none; }
+
+  details.card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: var(--blue);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  details[open].card::after { transform: scaleX(1); }
+  details[open].card { background: var(--blue-pale); }
+  details.card-wide { grid-column: span 2; }
+
+  .card-summary {
+    padding: 44px 36px 0;
+    cursor: pointer; display: block;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .card-num {
+    font-family: 'Raleway', sans-serif;
+    font-size: 3.5rem; font-weight: 800;
+    color: var(--soft); line-height: 1; margin-bottom: 20px;
+    transition: color 0.35s;
+  }
+  details[open] .card-num { color: rgba(58,127,193,0.2); }
+
+  .card-icon-wrap { margin-bottom: 18px; }
+  .card-icon-wrap svg {
+    width: 40px; height: 40px;
+    stroke: var(--ink); fill: none;
+    stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round;
+    transition: stroke 0.3s;
+  }
+  details[open] .card-icon-wrap svg { stroke: var(--blue); }
+
+  .card-title {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.2rem; font-weight: 800;
+    line-height: 1.25; letter-spacing: -0.01em;
+    margin-bottom: 6px; color: var(--ink);
+  }
+  .card-sub {
+    font-size: 0.73rem; font-weight: 400;
+    color: var(--mid); margin-bottom: 0;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+    letter-spacing: 0.02em;
+  }
+  .card-toggle {
+    margin-top: 16px; padding-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid);
+    transition: color 0.3s;
+  }
+  details[open] .card-toggle { color: var(--blue); }
+  .card-toggle-icon {
+    width: 18px; height: 18px;
+    border: 1.5px solid currentColor; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform 0.3s;
+    flex-shrink: 0;
+  }
+  details[open] .card-toggle-icon { transform: rotate(45deg); }
+  .card-toggle-icon svg { width: 8px; height: 8px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+  .card-body {
+    padding: 0 36px 28px;
+  }
+  .card-body ul { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .card-body li {
+    font-size: 0.875rem; font-weight: 300;
+    line-height: 1.6; color: #374151;
+    padding-left: 16px; position: relative;
+  }
+  .card-body li::before {
+    content: ''; position: absolute;
+    left: 0; top: 10px;
+    width: 6px; height: 1.5px;
+    background: var(--blue);
+  }
+
+  /* ── QUOTE ── */
+  #zitat {
+    background: var(--blue-dark);
+    padding: 130px 60px; position: relative; overflow: hidden;
+  }
+  .quote-bg-text {
+    position: absolute; top: -80px; right: -40px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 22rem; font-weight: 800;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(255,255,255,0.05);
+    line-height: 1; pointer-events: none; user-select: none;
+  }
+  .quote-inner { position: relative; max-width: 860px; margin: 0 auto; text-align: center; }
+  .quote-mark {
+    display: block; font-family: 'Raleway', sans-serif;
+    font-size: 5rem; font-weight: 800;
+    color: rgba(255,255,255,0.15); line-height: 0.8; margin-bottom: 28px;
+  }
+  blockquote {
+    font-family: 'Raleway', sans-serif;
+    font-size: clamp(1.25rem, 2.8vw, 1.9rem);
+    font-weight: 300; font-style: italic;
+    line-height: 1.6; color: rgba(255,255,255,0.88); margin-bottom: 36px;
+  }
+  blockquote strong { font-style: normal; font-weight: 800; color: #ffffff; }
+  .quote-attribution {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+  }
+
+  /* ── CONTEXT ── */
+  #kontext { background: var(--bg); }
+  .context-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: start; }
+  .context-text { font-size: 1rem; font-weight: 300; line-height: 1.8; color: var(--mid); margin-bottom: 28px; }
+  .context-highlight {
+    padding: 24px 28px;
+    border-left: 3px solid var(--blue);
+    background: var(--white);
+    box-shadow: 0 2px 16px rgba(58,127,193,0.06);
+  }
+  .context-highlight p {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.95rem; font-style: italic;
+    font-weight: 400; line-height: 1.65; color: var(--ink);
+  }
+  .fact-list { display: flex; flex-direction: column; }
+  .fact-item {
+    display: grid; grid-template-columns: 72px 1fr;
+    gap: 20px; padding: 24px 0;
+    border-bottom: 1px solid var(--line); align-items: start;
+  }
+  .fact-item:first-child { border-top: 1px solid var(--line); }
+  .fact-num {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.8rem; font-weight: 800; color: var(--blue); line-height: 1;
+  }
+  .fact-label {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.6rem; font-weight: 700;
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--mid); margin-top: 3px;
+  }
+  .fact-desc { font-size: 0.875rem; font-weight: 300; line-height: 1.65; color: var(--ink); padding-top: 3px; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: var(--ink); padding: 36px 60px;
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+  }
+  .footer-left {
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.72rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255,255,255,0.5);
+  }
+  .footer-left strong { color: rgba(255,255,255,0.8); }
+  .footer-right { font-size: 0.7rem; font-weight: 300; color: rgba(255,255,255,0.35); text-align: right; line-height: 1.7; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    section { padding: 72px 24px; }
+    .hero-content { padding: 24px 24px 48px; }
+    .scroll-hint { padding: 0 24px 32px; }
+    .cards-grid { grid-template-columns: 1fr; }
+    details.card-wide { grid-column: span 1; }
+    .context-grid { grid-template-columns: 1fr; gap: 40px; }
+    #zitat { padding: 80px 24px; }
+    footer { padding: 28px 24px; flex-direction: column; align-items: flex-start; }
+    .footer-right { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="nav-brand">
+    <span class="nav-brand-name">Gymnasium Norf</span>
+    <span class="nav-brand-sub">Medienpädagogik</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#massnahmen">Maßnahmen</a></li>
+    <li><a href="#zitat">Kernthese</a></li>
+    <li><a href="#kontext">Kontext</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+
+  <div class="hero-banner">
+    <canvas id="hero-canvas"></canvas>
+    <div class="hero-banner-overlay"></div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <div class="hero-eyebrow-line"></div>
+      <span>Impulse aus Wuppertal · CFG</span>
+    </div>
+    <h1 class="hero-title">
+      Der KI-Führerschein –<br>
+      <em>Was eine Schule<br>konkret macht</em>
+    </h1>
+    <p class="hero-sub">
+      Felix Urban, KI-Koordinator am Carl-Fuhlrott-Gymnasium in Wuppertal, hat ein Konzept entwickelt, das Schülerinnen und Schüler für den reflektierten Umgang mit künstlicher Intelligenz fit macht.
+    </p>
+    <div class="hero-tag">
+      <div class="hero-tag-dot"></div>
+      <span>Spiegel+ · 19. April 2026 · Silke Fokken</span>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scrollen</span>
+    <div class="scroll-arrow">
+      <svg viewBox="0 0 10 10"><polyline points="2,3 5,7 8,3"/></svg>
+    </div>
+  </div>
+
+</section>
+
+<!-- MASSNAHMEN -->
+<section id="massnahmen">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">
+      <div class="section-eyebrow-line"></div>
+      <span>Die 5 Maßnahmen</span>
+    </div>
+    <h2 class="section-title">Was das CFG <em>konkret</em> umsetzt</h2>
+  </div>
+
+  <div class="cards-grid">
+
+    <details class="card reveal reveal-delay-1">
+      <summary class="card-summary">
+        <div class="card-num">01</div>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="12" r="2.2"/><line x1="13" y1="9.5" x2="19" y2="9.5"/><line x1="13" y1="12" x2="19" y2="12"/><line x1="13" y1="14.5" x2="16.5" y2="14.5"/></svg>
+        </div>
+        <div class="card-title">Der KI-Führerschein</div>
+        <div class="card-sub">Doppelstunde für alle Klassen ab Jg. 8</div>
+        <div class="card-toggle">
+          <div class="card-toggle-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+          <span>Details</span>
+        </div>
+      </summary>
+      <div class="card-body">
+        <ul>
+          <li>KI als „Wahrscheinlichkeitsvorhersagemaschine" verstehen</li>
+          <li>Algorithmische Verzerrungen & Bias erkennen</li>
+          <li>Risiken der Denkauslagerung reflektieren</li>
+          <li>Jede Woche eine neue Klasse – 1.500 SuS gesamt</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="card reveal reveal-delay-2">
+      <summary class="card-summary">
+        <div class="card-num">02</div>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="5" y="8" width="14" height="10" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="12" y1="7" x2="12" y2="8"/><circle cx="9" cy="13" r="1.3"/><circle cx="15" cy="13" r="1.3"/><path d="M9.5 16.5 Q12 18 14.5 16.5"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>
+        </div>
+        <div class="card-title">Didaktische KI-Agenten</div>
+        <div class="card-sub">Dialogisches Lernen statt fertiger Antworten</div>
+        <div class="card-toggle">
+          <div class="card-toggle-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+          <span>Details</span>
+        </div>
+      </summary>
+      <div class="card-body">
+        <ul>
+          <li><em>ErklärbAIr</em>: greift Interessen auf, stellt Fragen, fordert Teach-back</li>
+          <li><em>Advocatus Diaboli</em>: vertritt stets die Gegenposition</li>
+          <li>Ziel: Diskurs- und Argumentationskompetenz stärken</li>
+          <li>Von Urban selbst programmiert und eingesetzt</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="card reveal reveal-delay-3">
+      <summary class="card-summary">
+        <div class="card-num">03</div>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14.5" y1="4" x2="9.5" y2="20"/></svg>
+        </div>
+        <div class="card-title">SuS als Entwickler</div>
+        <div class="card-sub">Eigene Apps mit KI erstellen</div>
+        <div class="card-toggle">
+          <div class="card-toggle-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+          <span>Details</span>
+        </div>
+      </summary>
+      <div class="card-body">
+        <ul>
+          <li>Aufgabe: „Löst ein typisches Schülerproblem mit KI"</li>
+          <li>Beispiel: App zur Förderung mündlicher Beteiligung</li>
+          <li>Fertig in unter 10 Minuten – ohne Vorkenntnisse</li>
+          <li>Stärkt Selbstwirksamkeit im Umgang mit KI</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="card reveal reveal-delay-4">
+      <summary class="card-summary">
+        <div class="card-num">04</div>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="13" x2="5.8" y2="17.2"/><line x1="12" y1="13" x2="18.2" y2="17.2"/></svg>
+        </div>
+        <div class="card-title">Strukturelle Verankerung</div>
+        <div class="card-sub">Schulleitung schafft Raum</div>
+        <div class="card-toggle">
+          <div class="card-toggle-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+          <span>Details</span>
+        </div>
+      </summary>
+      <div class="card-body">
+        <ul>
+          <li>KI-Koordinator als feste Rolle seit 2025</li>
+          <li>Team aus Lehrkräften für digitale Bildung</li>
+          <li>Freitagvormittag: 3–4 Std. Entlastung pro Woche</li>
+          <li>Auszeichnung mit KI-Schulpreis Anfang 2026</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="card card-wide reveal reveal-delay-5">
+      <summary class="card-summary">
+        <div class="card-num">05</div>
+        <div class="card-icon-wrap">
+          <svg viewBox="0 0 24 24"><polyline points="3 20 8.5 9 13 16 16.5 10.5 21 20"/><line x1="3" y1="20" x2="21" y2="20"/></svg>
+        </div>
+        <div class="card-title">Analog als Gegenpol</div>
+        <div class="card-sub">Persönlichkeitsentwicklung als Hauptantwort auf KI</div>
+        <div class="card-toggle">
+          <div class="card-toggle-icon"><svg viewBox="0 0 10 10"><line x1="5" y1="1" x2="5" y2="9"/><line x1="1" y1="5" x2="9" y2="5"/></svg></div>
+          <span>Details</span>
+        </div>
+      </summary>
+      <div class="card-body">
+        <ul>
+          <li>„Herausforderungsprojekt" für alle Zehntklässler</li>
+          <li>Z.B. 10-tägige Alpenüberquerung oder Klosteraufenthalt</li>
+          <li>Menschliche Skills: Entscheiden, Verantworten, Ausharren</li>
+          <li>KI nur „punktuell" – nicht dominierend im Schulalltag</li>
+        </ul>
+      </div>
+    </details>
+
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section id="zitat">
+  <div class="quote-bg-text">"</div>
+  <div class="quote-inner reveal">
+    <span class="quote-mark">"</span>
+    <blockquote>
+      Die heutige Schülergeneration wird die Wahl, ob sie KI nutzt,
+      <strong>nicht mehr haben</strong> – darauf müssen wir schulisch
+      Antworten finden und ihnen die enormen Risiken,
+      aber auch Chancen aufzeigen.
+    </blockquote>
+    <div class="quote-attribution">Felix Urban · KI-Koordinator · Carl-Fuhlrott-Gymnasium Wuppertal · Spiegel+, 19.04.2026</div>
+  </div>
+</section>
+
+<!-- KONTEXT -->
+<section id="kontext">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">
+      <div class="section-eyebrow-line"></div>
+      <span>Einordnung</span>
+    </div>
+    <h2 class="section-title">Warum das <em>jetzt</em> relevant ist</h2>
+  </div>
+  <div class="context-grid">
+    <div class="context-left reveal reveal-delay-1">
+      <p class="context-text">Das Konzept des Carl-Fuhlrott-Gymnasiums adressiert ein Problem, das Schulen weltweit beschäftigt: Schülerinnen und Schüler nutzen KI-Tools täglich – oft unkritisch und ohne Grundverständnis der Funktionsweise.</p>
+      <p class="context-text">Urban setzt nicht auf Verbote, sondern auf Aufklärung und dialogisches Lernen. Die zentrale Erkenntnis aus dem OECD-Bericht Digital Education Outlook 2026 stützt diesen Ansatz direkt.</p>
+      <div class="context-highlight">
+        <p>Wenn SuS KI nutzen, um fertige Antworten zu erhalten, verbessert sich das Ergebnis kurzfristig – langfristig verschlechtert sich die Leistung. Dialogisches Lernen mit KI hingegen verbessert sie nachhaltig.</p>
+      </div>
+    </div>
+    <div class="context-right reveal reveal-delay-2">
+      <div class="fact-list">
+        <div class="fact-item">
+          <div><div class="fact-num">90'</div><div class="fact-label">Format</div></div>
+          <div class="fact-desc">Eine Doppelstunde – skalierbar, fächerunabhängig, wiederholbar für jede Klasse ab Jahrgang 8.</div>
+        </div>
+        <div class="fact-item">
+          <div><div class="fact-num">1.500</div><div class="fact-label">SuS</div></div>
+          <div class="fact-desc">Alle Klassen ab Jahrgang 8 durchlaufen den KI-Führerschein – systematisch und verpflichtend.</div>
+        </div>
+        <div class="fact-item">
+          <div><div class="fact-num">2025</div><div class="fact-label">Seit</div></div>
+          <div class="fact-desc">KI-Koordination als feste Rolle, eingebettet in ein Team mit wöchentlicher Entlastung durch die Schulleitung.</div>
+        </div>
+        <div class="fact-item">
+          <div><div class="fact-num">★</div><div class="fact-label">Preis</div></div>
+          <div class="fact-desc">KI-Schulpreis Anfang 2026 – das Gesamtkonzept wurde extern anerkannt.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-left"><strong>Gymnasium Norf</strong> · Medienpädagogik-Team · Schuljahr 2025/26</div>
+  <div class="footer-right">Spiegel+, 19.04.2026 · Silke Fokken<br>„Ein Wuppertaler Lehrer trotzt der Denkfaulheit durch KI"</div>
+</footer>
+
+<script>
+  document.body.classList.add('js-ready');
+
+  // Nav scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 40);
+  });
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
+    });
+  }, { threshold: 0, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // ── CANVAS BANNER ──
+  window.addEventListener('load', function() {
+    const canvas = document.getElementById('hero-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const BLUE = '58,127,193', DARK = '30,90,150';
+    const N = 52, DIST = 155, SPEED = 0.013;
+    let nodes = [], pulses = [], W = 0, H = 0, raf, lastPulse = 0;
+
+    function resize() {
+      const p = canvas.parentElement;
+      W = p.offsetWidth || window.innerWidth;
+      H = p.offsetHeight || 280;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
+      canvas.style.width  = W + 'px';
+      canvas.style.height = H + 'px';
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.scale(dpr, dpr);
+      nodes = Array.from({length: N}, () => ({
+        x: Math.random()*W, y: Math.random()*H,
+        vx: (Math.random()-.5)*.32, vy: (Math.random()-.5)*.32,
+        r: Math.random()*2.2+1.2, op: Math.random()*.5+.3
+      }));
+      pulses = [];
+    }
+
+    function spawnPulse() {
+      const i = Math.floor(Math.random()*nodes.length);
+      const a = nodes[i];
+      const nb = nodes.filter((b,j) => {
+        if (j===i) return false;
+        const dx=b.x-a.x, dy=b.y-a.y;
+        return Math.sqrt(dx*dx+dy*dy) < DIST;
+      });
+      if (!nb.length) return;
+      const b = nb[Math.floor(Math.random()*nb.length)];
+      pulses.push({ax:a.x, ay:a.y, bx:b.x, by:b.y, t:0});
+    }
+
+    function draw(ts) {
+      ctx.clearRect(0,0,W,H);
+      const g = ctx.createLinearGradient(0,0,W,H);
+      g.addColorStop(0, `rgba(${DARK},.05)`);
+      g.addColorStop(1, `rgba(${BLUE},.01)`);
+      ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+      nodes.forEach(n => {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x<0||n.x>W) n.vx*=-1;
+        if (n.y<0||n.y>H) n.vy*=-1;
+      });
+
+      for (let i=0; i<nodes.length; i++) {
+        for (let j=i+1; j<nodes.length; j++) {
+          const a=nodes[i], b=nodes[j];
+          const dx=b.x-a.x, dy=b.y-a.y, d=Math.sqrt(dx*dx+dy*dy);
+          if (d<DIST) {
+            ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+            ctx.strokeStyle=`rgba(${BLUE},${(1-d/DIST)*.22})`;
+            ctx.lineWidth=.9; ctx.stroke();
+          }
+        }
+      }
+
+      nodes.forEach(n => {
+        const gw = ctx.createRadialGradient(n.x,n.y,0,n.x,n.y,n.r*6);
+        gw.addColorStop(0,`rgba(${BLUE},${n.op*.22})`);
+        gw.addColorStop(1,`rgba(${BLUE},0)`);
+        ctx.beginPath(); ctx.arc(n.x,n.y,n.r*6,0,Math.PI*2);
+        ctx.fillStyle=gw; ctx.fill();
+        ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+        ctx.fillStyle=`rgba(${BLUE},${n.op})`; ctx.fill();
+      });
+
+      if (ts-lastPulse>440) { spawnPulse(); lastPulse=ts; }
+      pulses = pulses.filter(p=>p.t<1);
+      pulses.forEach(p => {
+        p.t += SPEED;
+        const px=p.ax+(p.bx-p.ax)*p.t, py=p.ay+(p.by-p.ay)*p.t;
+        const a=Math.sin(p.t*Math.PI)*.9;
+        ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
+        ctx.fillStyle=`rgba(255,255,255,${a})`; ctx.fill();
+        ctx.beginPath(); ctx.arc(px,py,3.5,0,Math.PI*2);
+        ctx.strokeStyle=`rgba(${BLUE},${a})`; ctx.lineWidth=1.5; ctx.stroke();
+      });
+
+      raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { cancelAnimationFrame(raf); resize(); raf=requestAnimationFrame(draw); }, 150);
+    });
+    raf = requestAnimationFrame(draw);
+  });
+</script>
+
+</body>
+</html>
