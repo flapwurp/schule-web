@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>KI-Workshop · Prompts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Raleway:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --blue:#2E75B6; --light:#DEEBF7; --ink:#1F2A36; --muted:#5B6B7C; --panel:#F3F6F9; --line:#B4C7DC; --ok:#2F8F5B; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Lato,-apple-system,"Helvetica Neue",Arial,sans-serif; color:var(--ink); background:#fff; font-size:18px; line-height:1.5;
+         padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0); }
+  main { max-width:720px; margin:0 auto; padding:24px 20px 60px; }
+  header { display:flex; align-items:stretch; margin-bottom:24px; }
+  .num { background:var(--blue); color:#fff; font-family:Raleway,Arial,sans-serif; font-weight:800; font-size:2.6rem; padding:8px 22px; display:flex; align-items:center; }
+  .title { background:var(--light); padding:12px 18px; flex:1; }
+  h1 { font-family:Raleway,Arial,sans-serif; margin:0; font-size:1.6rem; line-height:1.2; }
+  .title p { margin:4px 0 0; color:var(--muted); font-size:1rem; }
+  h2 { font-family:Raleway,Arial,sans-serif; color:var(--blue); font-size:1.15rem; margin:28px 0 10px; }
+  .fields { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .fields .wide { grid-column:1 / -1; }
+  label { font-weight:700; font-size:.95rem; display:block; margin-bottom:4px; }
+  input, textarea, select { width:100%; font:inherit; padding:12px; border:2px solid var(--line); border-radius:6px; background:#fff; color:var(--ink); }
+  textarea { min-height:90px; resize:vertical; }
+  input:focus, textarea:focus, select:focus { outline:none; border-color:var(--blue); }
+  .check { display:flex; gap:10px; align-items:center; font-weight:400; }
+  .check input { width:24px; height:24px; }
+  .prompt { background:var(--panel); border-left:6px solid var(--blue); padding:16px 18px; white-space:pre-wrap; font-size:1rem; }
+  .ph { color:var(--blue); font-weight:700; }
+  .copy { display:block; width:100%; margin-top:14px; padding:18px; font:inherit; font-weight:700; font-size:1.2rem; color:#fff; background:var(--blue); border:0; border-radius:8px; cursor:pointer; }
+  .copy.done { background:var(--ok); }
+  button:focus-visible, a:focus-visible { outline:3px solid var(--ink); outline-offset:2px; }
+  .hint { color:var(--muted); font-size:.95rem; margin-top:8px; }
+  ul.follow { list-style:none; padding:0; margin:0; }
+  ul.follow li { display:flex; gap:12px; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:6px; padding:10px 12px; margin-bottom:8px; }
+  .small { flex-shrink:0; font:inherit; font-size:.9rem; font-weight:700; padding:8px 14px; border:2px solid var(--blue); color:var(--blue); background:#fff; border-radius:6px; cursor:pointer; }
+  .small.done { border-color:var(--ok); color:var(--ok); }
+  .back { display:inline-block; margin-top:36px; color:var(--blue); font-weight:700; text-decoration:none; }
+  .list { list-style:none; padding:0; margin:0; display:grid; gap:10px; }
+  .list a { display:grid; grid-template-columns:52px 1fr; align-items:center; gap:14px; padding:14px 16px; background:var(--panel); color:var(--ink); text-decoration:none; border-radius:6px; }
+  .list b { font-family:Raleway,Arial,sans-serif; font-size:1.8rem; color:var(--blue); text-align:center; }
+  .list span small { display:block; color:var(--muted); font-size:.9rem; }
+  .qrgrid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:20px; }
+  .qrcard { border:1px solid var(--line); border-radius:6px; padding:14px; text-align:center; }
+  .qrcard .code { display:flex; justify-content:center; margin:8px 0; min-height:180px; align-items:center; }
+  .qrcard .url { font-size:.75rem; color:var(--muted); word-break:break-all; }
+  @media (max-width:480px){ .fields { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const KLASSE = {k:'Klasse', label:'Klasse', ph:'z. B. 7. Klasse', shared:true};
+const FACH   = {k:'Fach', label:'Fach', ph:'z. B. Biologie', shared:true};
+
+const STATIONS = {
+  start: { num:'', title:'Der erste Prompt', sub:'Fünf Wiederholungsfragen für den Stundenbeginn',
+    fields:[FACH, KLASSE,
+      {k:'Thema', label:'Thema', ph:'z. B. Ursachen der Französischen Revolution', wide:true, empty:'[Thema]'},
+      {k:'Kontext', label:'Was wurde in den letzten Stunden behandelt?', ph:'z. B. Staatsschulden, Ständegesellschaft, Missernten', wide:true, type:'textarea', empty:'[was behandelt wurde]'}],
+    lines:[
+      'Du bist Lehrkraft für {Fach} an einem Gymnasium in NRW.',
+      'Erstelle fünf Multiple-Choice-Fragen zur Wiederholung.',
+      'In den letzten Stunden ging es um {Thema}: {Kontext}.',
+      'Zielgruppe: {Klasse}, Einstieg in die Stunde, höchstens fünf Minuten.',
+      'Format: Tabelle mit Frage, drei Antworten und Lösung.'],
+    after:'Im KI-Chat einfügen und abschicken.',
+    follow:['Mach Frage 3 schwieriger.','Füg zu jeder Frage eine kurze Erklärung der Lösung hinzu.'] },
+
+  s1: { num:'1', title:'Differenzierung', sub:'Tippkarten und Zusatzaufgabe zu einem Arbeitsblatt, das du schon hast',
+    fields:[FACH, KLASSE],
+    lines:[
+      'Du bist eine erfahrene Lehrkraft für {Fach} an einem Gymnasium in NRW. Ich unterrichte eine {Klasse}. Unten findest du ein Arbeitsblatt, das ich im Unterricht einsetze. Einigen Schülerinnen und Schülern fällt die Bearbeitung schwer, andere sind schnell fertig.',
+      '',
+      'Erstelle bitte:',
+      '1. Für jede Aufgabe eine Hilfe für Schülerinnen und Schüler, die Unterstützung brauchen, z. B. Satzanfänge, einen Wortspeicher (Schüttelkasten) mit Fachbegriffen oder kurze Worterklärungen. Die Hilfe darf die Lösung nicht vorwegnehmen. Die Aufgaben selbst bleiben unverändert.',
+      '2. Eine Zusatzaufgabe für schnelle Schülerinnen und Schüler, die das Thema vertieft, statt mehr vom Gleichen zu verlangen.',
+      '',
+      'Gliedere deine Antwort nach den Aufgaben des Arbeitsblatts.',
+      '',
+      'Hier ist das Arbeitsblatt:'],
+    after:'Im KI-Chat einfügen, Arbeitsblatt als Datei oder Foto anhängen und absenden.',
+    follow:['Die Hilfen verraten zu viel. Gib nur Denkanstöße, keine Teillösungen.','Mach daraus gestufte Tippkarten: Tipp 1 ist ein kleiner Anstoß, Tipp 2 hilft deutlicher.','Die Zusatzaufgabe soll das Gelernte auf ein neues Beispiel übertragen.'] },
+
+  s2: { num:'2', title:'Texte erschließen', sub:'Übungen, mit denen deine Klasse einen Text selbst knackt',
+    fields:[FACH, KLASSE,
+      {k:'Format', label:'Übungsformat', type:'select', wide:true, options:[
+        ['Überschriften zuordnen','Überschriften zuordnen: Formuliere für jeden Absatz eine passende Zwischenüberschrift und zwei weitere, die zu keinem Absatz passen. Gib alle in gemischter Reihenfolge aus.'],
+        ['Multiple Choice','Multiple Choice: Sechs Fragen zum Detailverständnis mit je drei Antworten. Die falschen Antworten sollen plausibel sein und typische Missverständnisse aufgreifen.'],
+        ['Lückentext','Lückentext: Fasse den Text in sechs bis acht Sätzen zusammen und lass die wichtigsten Fachbegriffe als Lücken frei. Gib die Begriffe als Wortspeicher aus, ergänzt um zwei Begriffe, die nicht passen.']]}],
+    lines:[
+      'Du bist eine erfahrene Lehrkraft für {Fach} an einem Gymnasium in NRW. Meine {Klasse} soll den Text unten selbstständig erschließen. Vereinfache den Text nicht. Erstelle stattdessen eine Übung, die beim Erschließen hilft:',
+      '{Format}',
+      '',
+      'Jede Aufgabe muss sich eindeutig aus dem Text beantworten lassen. Gib die Lösung getrennt am Ende aus.',
+      '',
+      'Hier ist der Text:'],
+    after:'Im KI-Chat einfügen, Text als Datei oder Foto anhängen und absenden.',
+    follow:['Die falschen Antworten sind zu leicht zu durchschauen. Mach sie plausibler.','Erstelle eine zweite Fassung mit Zeilenangaben als Hilfe.','Mach aus demselben Text zusätzlich einen Lückentext.'] },
+
+  s3: { num:'3', title:'Musterlösung', sub:'Ein erster Entwurf, den du nur noch anpassen musst',
+    fields:[FACH, KLASSE,
+      {k:'Zeit', label:'Bearbeitungszeit in Minuten', ph:'z. B. 30', empty:'[Zeit]'},
+      {k:'Aufgabe', label:'Aufgabe', ph:'Aufgabenstellung hier einfügen', wide:true, type:'textarea', empty:'[Aufgabe einfügen]'}],
+    lines:[
+      'Du bist eine erfahrene Lehrkraft für {Fach} an einem Gymnasium in NRW. Meine {Klasse} bearbeitet die Aufgabe unten zum Material unten. Schreib eine Musterlösung, wie sie eine gute Schülerin oder ein guter Schüler dieser Klasse in {Zeit} Minuten schreiben könnte. Beachte den Operator der Aufgabe und belege deine Aussagen am Material.',
+      '',
+      'Liste danach die erwarteten Inhalte zusätzlich als Stichpunkte auf, damit ich sie beim Korrigieren abhaken kann.',
+      '',
+      'Aufgabe: {Aufgabe}',
+      '',
+      'Material:'],
+    after:'Im KI-Chat einfügen, Material als Datei oder Foto anhängen und absenden.',
+    follow:['Das ist zu anspruchsvoll. Schreib es so, wie es jemand aus dieser Klasse realistisch schafft.','Kürz die Musterlösung auf etwa [Anzahl] Wörter.','Ordne die Stichpunkte den Anforderungsbereichen I bis III zu.'] },
+
+  s4: { num:'4', title:'Einstiege finden', sub:'Die KI liefert Ideen, du entscheidest',
+    fields:[FACH, KLASSE,
+      {k:'Thema', label:'Thema der Stunde', ph:'z. B. Julikrise 1914', wide:true, empty:'[Thema]'},
+      {k:'Problemfrage', label:'Problemfrage', ph:'z. B. Warum wurde aus einem Attentat ein Weltkrieg?', wide:true, empty:'[Problemfrage]'},
+      {k:'Ziel', label:'Am Ende der Stunde sollen die Schülerinnen und Schüler …', ph:'z. B. erklären können, warum die Großmächte nicht einlenkten', wide:true, empty:'[Stundenziel]'},
+      {k:'Vorwissen', label:'Was wurde vorher behandelt?', ph:'z. B. Bündnissysteme und Wettrüsten', wide:true, empty:'[was schon behandelt wurde]'},
+      {k:'Material', label:'Ich hänge Material für die Stunde an', type:'check', wide:true}],
+    lines:[
+      'Du bist eine erfahrene Lehrkraft für {Fach} an einem Gymnasium in NRW. Ich plane eine Stunde in einer {Klasse} zum Thema {Thema}. Die Problemfrage der Stunde lautet: {Problemfrage} Am Ende der Stunde sollen die Schülerinnen und Schüler {Ziel}. Vorher haben wir {Vorwissen}.',
+      {t:'Im Anhang findest du das Material, mit dem die Klasse in der Stunde arbeitet.', if:'Material'},
+      '',
+      'Schlag mir fünf Einstiege für die ersten fünf bis zehn Minuten vor, die zur Problemfrage hinführen und sich deutlich voneinander unterscheiden, zum Beispiel über ein Bild, einen Alltagsbezug, eine provokante These, ein kleines Experiment oder ein Rätsel. Beschreib jeden Einstieg in zwei bis drei Sätzen.'],
+    after:'Im KI-Chat einfügen, Material ggf. anhängen und absenden. Rechne nicht damit, dass der erste Vorschlag schon passt.',
+    follow:['Nimm Idee [Nummer] und arbeite sie aus: Was sage ich, was zeige ich, was tun die Schülerinnen und Schüler?','Das ist mir zu aufwendig. Fünf neue Ideen, die ohne Vorbereitung funktionieren.','Welche Idee passt am besten zu einer unruhigen Klasse in der sechsten Stunde? Begründe kurz.'] },
+
+  s5: { num:'5', title:'Elternbrief', sub:'Du lieferst die Fakten, die KI formuliert. Auf Wunsch auch in anderen Sprachen.',
+    note:'Felder, die du leer lässt, kommen nicht in den Prompt.',
+    fields:[KLASSE,
+      {k:'Anlass', label:'Anlass', ph:'z. B. Wandertag zum Neandertal', wide:true, empty:'[Anlass]'},
+      {k:'Datum', label:'Datum und Uhrzeit', ph:'z. B. Fr, 13.11., 8:00–13:30 Uhr', opt:true},
+      {k:'Ort', label:'Treffpunkt', ph:'z. B. Bushaltestelle vor der Schule', opt:true},
+      {k:'Kosten', label:'Kosten', ph:'z. B. 8 €', opt:true},
+      {k:'Mitbringen', label:'Mitbringen', ph:'z. B. Proviant, festes Schuhwerk', opt:true},
+      {k:'Rueckmeldung', label:'Rückmeldung bis', ph:'z. B. 6.11.', opt:true},
+      {k:'Unterschrift', label:'Unterschrift', ph:'dein Name, Funktion', opt:true}],
+    lines:[
+      'Schreib einen Elternbrief für meine {Klasse}. Ton: freundlich und sachlich, höchstens eine Seite. Verwende nur die Angaben unten und erfinde nichts dazu. Wenn etwas Wichtiges fehlt, frag mich, statt es zu ergänzen.',
+      '',
+      'Anlass: {Anlass}',
+      {t:'Datum und Uhrzeit: {Datum}', if:'Datum'},
+      {t:'Treffpunkt: {Ort}', if:'Ort'},
+      {t:'Kosten: {Kosten}', if:'Kosten'},
+      {t:'Mitbringen: {Mitbringen}', if:'Mitbringen'},
+      {t:'Rückmeldung bis: {Rueckmeldung}', if:'Rueckmeldung'},
+      {t:'Unterschrift: {Unterschrift}', if:'Unterschrift'}],
+    after:'Im KI-Chat einfügen und absenden.',
+    follow:['Füg unten einen Abschnitt zum Abtrennen für die Rückmeldung hinzu.','Schreib den Brief zusätzlich in Leichter Sprache.','Übersetze den Brief ins [Sprache]. Daten, Uhrzeiten und Beträge bleiben genau gleich.'] },
+
+  s6: { num:'6', title:'Verlaufsplan', sub:'Stunde erzählen, Tabelle bekommen',
+    fields:[FACH, KLASSE,
+      {k:'Dauer', label:'Dauer', type:'select', options:[['45 Minuten','45'],['90 Minuten','90']]}],
+    lines:[
+      'Du bist eine erfahrene Lehrkraft für {Fach} an einem Gymnasium in NRW. Ich beschreibe dir gleich eine Stunde für meine {Klasse}, so wie ich sie im Kopf habe. Die Stunde dauert {Dauer} Minuten.',
+      '',
+      'Mach daraus einen tabellarischen Verlaufsplan mit den Spalten Zeit, Phase, Unterrichtsgeschehen, Sozialform und Material.',
+      '',
+      'Halte dich an das, was ich beschreibe, und ergänze keine eigenen Phasen oder Methoden. Wenn etwas unklar ist, etwa wie lange eine Phase dauert, frag nach, statt zu raten.',
+      '',
+      'Hier ist meine Stunde:'],
+    after:'Im KI-Chat einfügen, dann die Mikrofon-Taste auf der Tastatur tippen und die Stunde erzählen. Absenden.',
+    follow:['Die Erarbeitung dauert [Minuten] Minuten. Verteil die übrige Zeit neu.','Füg eine Spalte „Erwartetes Ergebnis“ hinzu.','Kürz das Unterrichtsgeschehen auf Stichpunkte.'] }
+};
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {
+  get(k){ try { return localStorage.getItem('kiws-'+k) || ''; } catch(e){ return ''; } },
+  set(k,v){ try { localStorage.setItem('kiws-'+k, v); } catch(e){} }
+};
+
+function fieldHTML(f){
+  const cls = f.wide ? ' class="wide"' : '';
+  if (f.type === 'select')
+    return `<div${cls}><label for="f-${f.k}">${esc(f.label)}</label><select id="f-${f.k}">${f.options.map((o,i)=>`<option value="${i}">${esc(o[0])}</option>`).join('')}</select></div>`;
+  if (f.type === 'check')
+    return `<div${cls}><label class="check"><input type="checkbox" id="f-${f.k}"> ${esc(f.label)}</label></div>`;
+  const val = f.shared ? esc(store.get(f.k)) : '';
+  if (f.type === 'textarea')
+    return `<div${cls}><label for="f-${f.k}">${esc(f.label)}</label><textarea id="f-${f.k}" placeholder="${esc(f.ph||'')}">${val}</textarea></div>`;
+  return `<div${cls}><label for="f-${f.k}">${esc(f.label)}</label><input id="f-${f.k}" placeholder="${esc(f.ph||'')}" value="${val}" autocomplete="off"></div>`;
+}
+
+function values(st){
+  const v = {};
+  st.fields.forEach(f => {
+    const el = $('f-'+f.k);
+    if (f.type === 'select') v[f.k] = f.options[el.value][1];
+    else if (f.type === 'check') v[f.k] = el.checked;
+    else v[f.k] = el.value.trim();
+  });
+  return v;
+}
+
+function build(st, html){
+  const v = values(st);
+  const empty = {}; st.fields.forEach(f => empty[f.k] = f.empty || `[${f.label}]`);
+  return st.lines
+    .filter(l => typeof l === 'string' || v[l.if])
+    .map(l => {
+      const t = typeof l === 'string' ? l : l.t;
+      if (!html) return t.replace(/\{(\w+)\}/g, (_,k) => v[k] || empty[k]);
+      return esc(t).replace(/\{(\w+)\}/g, (_,k) => `<span class="ph">${esc(v[k] || empty[k])}</span>`);
+    }).join('\n');
+}
+
+async function copyText(text, btn, label){
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; }
+  catch(e){
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    try { ok = document.execCommand('copy'); } catch(_){}
+    document.body.removeChild(ta);
+  }
+  btn.textContent = ok ? 'Kopiert ✓' : 'Kopieren hat nicht geklappt – Text bitte markieren';
+  btn.classList.toggle('done', ok);
+  setTimeout(() => { btn.textContent = label; btn.classList.remove('done'); }, 2500);
+}
+
+function renderStation(id){
+  const st = STATIONS[id];
+  document.title = (st.num ? 'Station '+st.num+' · ' : '') + st.title;
+  $('app').innerHTML = `
+    <header>${st.num ? `<div class="num">${st.num}</div>` : ''}<div class="title"><h1>${esc(st.title)}</h1><p>${esc(st.sub)}</p></div></header>
+    <h2>Ausfüllen</h2>
+    <div class="fields">${st.fields.map(fieldHTML).join('')}</div>
+    ${st.note ? `<p class="hint">${esc(st.note)}</p>` : ''}
+    <h2>Dein Prompt</h2>
+    <div class="prompt" id="prompt" aria-live="polite"></div>
+    <button class="copy" id="copyMain" type="button">Prompt kopieren</button>
+    <p class="hint">${esc(st.after)}</p>
+    <h2>Nachsteuern: einfach hinterherschicken</h2>
+    <ul class="follow">${st.follow.map((t,i)=>`<li><span>„${esc(t)}“</span><button class="small" type="button" data-i="${i}">Kopieren</button></li>`).join('')}</ul>
+    <p class="hint">Steht etwas in eckigen Klammern, ersetze es vor dem Abschicken.</p>
+    <a class="back" href="#">Alle Stationen</a>`;
+  const update = () => { $('prompt').innerHTML = build(st, true); };
+  st.fields.forEach(f => {
+    const el = $('f-'+f.k);
+    el.addEventListener(f.type === 'select' || f.type === 'check' ? 'change' : 'input', () => {
+      if (f.shared) store.set(f.k, el.value.trim());
+      update();
+    });
+  });
+  $('copyMain').addEventListener('click', e => copyText(build(st, false), e.currentTarget, 'Prompt kopieren'));
+  document.querySelectorAll('.small').forEach(b => b.addEventListener('click', () => copyText(st.follow[b.dataset.i], b, 'Kopieren')));
+  update();
+  window.scrollTo(0,0);
+}
+
+function renderIndex(){
+  document.title = 'KI-Workshop · Prompts';
+  const items = Object.entries(STATIONS).map(([id,st]) =>
+    `<li><a href="#${id}"><b>${st.num || '★'}</b><span>${esc(st.title)}<small>${esc(st.sub)}</small></span></a></li>`).join('');
+  $('app').innerHTML = `
+    <header><div class="title"><h1>Erste Schritte mit KI</h1><p>Prompts zum Kopieren für alle Stationen</p></div></header>
+    <ul class="list">${items}</ul>`;
+}
+
+function renderQR(){
+  document.title = 'QR-Codes';
+  const base = location.href.split('#')[0];
+  const ids = Object.keys(STATIONS);
+  $('app').innerHTML = `
+    <header><div class="title"><h1>QR-Codes</h1><p>Rechtsklick auf einen Code und „Bild speichern“, oder den Button nutzen.</p></div></header>
+    <div class="qrgrid">${ids.map(id => `<div class="qrcard"><strong>${STATIONS[id].num ? 'Station '+STATIONS[id].num : 'Erster Prompt'}</strong><div class="code" id="qr-${id}"></div><div class="url">${esc(base+'#'+id)}</div><a class="small" id="dl-${id}" download="QR_${id}.png" href="#">PNG speichern</a></div>`).join('')}</div>
+    <p class="hint" id="qrerr"></p>`;
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+  s.onload = () => ids.forEach(id => {
+    const box = $('qr-'+id);
+    new QRCode(box, { text: base+'#'+id, width:180, height:180, correctLevel: QRCode.CorrectLevel.M });
+    setTimeout(() => { const c = box.querySelector('canvas'); if (c) $('dl-'+id).href = c.toDataURL('image/png'); }, 300);
+  });
+  s.onerror = () => { $('qrerr').textContent = 'Die QR-Bibliothek konnte nicht geladen werden. Internetverbindung prüfen.'; };
+  document.head.appendChild(s);
+}
+
+function route(){
+  const id = location.hash.slice(1);
+  if (STATIONS[id]) renderStation(id);
+  else if (id === 'qr') renderQR();
+  else renderIndex();
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
