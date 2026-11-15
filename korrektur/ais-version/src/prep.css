@@ -1,0 +1,30 @@
+#prep{display:none;position:fixed;inset:58px 0 0 0;background:var(--bg);z-index:35;overflow:auto}
+#prep .pwrap{max-width:1100px;margin:0 auto;padding:22px 24px 80px}
+#prep .phead{display:flex;align-items:center;justify-content:space-between}
+#prep h2{font-size:19px;margin:0}
+#prep .note{color:var(--muted);font-size:12.5px}
+.pstep{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 20px;margin:14px 0}
+.pstep.off{opacity:.45;pointer-events:none}
+.pstep h3{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:10px}
+.pstep h3 span{display:inline-flex;width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;align-items:center;justify-content:center;font-size:13px}
+.pstep p{margin:6px 0}
+#prep .row{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap}
+#prep .row.end{justify-content:flex-end}
+#prep .btn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 14px;font-size:13px}
+#prep .btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+#prep .btn:disabled{opacity:.45;cursor:default}
+.pst{font-size:13px;margin:6px 0}.pst.ok{color:var(--ok)}.pst.err{color:var(--red)}.pst.warn{color:var(--amber)}
+.pst ul,#repTab ul{margin:4px 0 0;padding-left:18px}
+#prep .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+#prep textarea{width:100%;height:220px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;border:1px solid var(--line);border-radius:8px;padding:8px;resize:vertical}
+#prep label{display:block;font-size:13px;margin-bottom:4px}
+#repTab{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+#repTab th{text-align:left;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);padding:5px 6px}
+#repTab td{border-bottom:1px solid var(--soft);padding:5px 6px;vertical-align:top}
+#repTab .warn,.upm .warn{color:var(--amber)}#repTab .miss{color:var(--muted)}
+.lnk{border:0;background:none;color:var(--accent);padding:0;text-decoration:underline;font-size:inherit}
+.upm{font-size:12.5px;padding:3px 0}
+#upPrev img{max-width:100%;border:1px solid var(--line);margin-top:6px}#upPrev .cap{font-size:12px;color:var(--muted);margin-top:8px}
+#start .alt{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+#prep label.chk{display:flex;gap:8px;align-items:center;margin:10px 0 0;font-size:13px}#prep label.chk .note{margin-left:4px}
+#repTab details summary{cursor:pointer;color:var(--muted)}

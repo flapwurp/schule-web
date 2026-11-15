@@ -1,0 +1,11 @@
+# Keine Schülerdaten im Repository
+*.pdf
+*.jpg
+*.jpeg
+*.png
+Korrekturstand_*.json
+lauf/
+scans/
+# Python
+__pycache__/
+*.pyc

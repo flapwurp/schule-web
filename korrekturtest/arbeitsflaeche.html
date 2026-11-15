@@ -156,6 +156,12 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
 .qpop button.on{background:var(--red);border-color:var(--red);color:#fff}
 .qpop .signs button{padding:6px 0;min-width:44px}
 .qpop input{margin-top:7px}
+.qpad{margin-top:7px;border:1px solid var(--line);border-radius:8px;position:relative;
+  background:linear-gradient(transparent 61px,#c9d3e3 61px,#c9d3e3 62px,transparent 62px) #fffdf6}
+.qpad canvas{display:block;width:100%;height:90px;touch-action:none;cursor:crosshair}
+.qpad .qph{position:absolute;left:8px;top:5px;font-size:11.5px;color:var(--muted);pointer-events:none}
+.mk path.cink{fill:none;stroke:var(--red);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mk.rej path.cink{stroke:var(--grey)}
 @media (any-pointer:coarse){
   .tool,.btn{min-height:44px}
   .tools button{min-height:40px;padding:6px 12px}
@@ -273,7 +279,7 @@ const cs = () => S.codes[cur.code];
 function items(code){
   const c = D.codes.find(x => x.code === (code||cur.code)), st = S.codes[c.code];
   const a = c.sug.map(s => { const d = st.dec[s.id] || {}; const segs = d.gap === true ? s.segs.slice(-1).map(toGap) : d.gap === false ? s.segs.map(x => x[4] === 'gap' ? [x[0] - 30, x[0] + 8, x[2], x[3]] : x) : s.segs;
-    return Object.assign({}, s, { src:'claude', status:d.status||'open', sign:d.sign??s.sign, corr:d.corr??s.corr, muster:d.muster??s.muster, segs, orig:s }); });
+    return Object.assign({}, s, { src:'claude', status:d.status||'open', sign:d.sign??s.sign, corr:d.corr??s.corr, cink:d.cink||null, muster:d.muster??s.muster, segs, orig:s }); });
   const ci = (c.inhalt || []).map(s => { const d = st.dec[s.id] || {};
     return Object.assign({}, s, { src:'claude', layer:'inhalt', status:d.status||'open', sign:d.sign??s.sign, corr:d.corr??s.corr, aspect:d.aspect??s.aspect, orig:s }); });
   const b = st.own.map(o => Object.assign({ src:'rob', status:'acc', conf:'sicher', layer:'sprache' }, o));
@@ -286,7 +292,7 @@ const CX = 1080, ISIGNS = { haken: ['✓', '(✓)'], rand: ['f', 'too vague', 'e
 const labelI = it => it.kind === 'haken' ? `${it.sign}${it.aspect ? ' ' + it.aspect : ''}` : (it.sign || '?') + (it.corr ? ': ' + it.corr : '');
 const anyLabel = it => isI(it) ? labelI(it) : label(it);
 function aspectText(id){ for (const t of D.eh) for (const k of t.krit) for (const a of (k.aspekte || [])) if (a.id === id) return a.t; return ''; }
-const label = it => (it.sign || '?') + (it.corr ? ' (' + it.corr + ')' : '') + (it.status==='open' && it.conf==='unsicher' ? ' ?' : '');
+const label = it => (it.sign || '?') + (it.corr ? ' (' + it.corr + ')' : it.cink ? ' (✎)' : '') + (it.status==='open' && it.conf==='unsicher' ? ' ?' : '');
 
 // ---------- Seiten ----------
 function renderPages(){
@@ -323,8 +329,10 @@ function layout(p, its, occ){
       if (ky1 > y0 && ky0 < y1 && p.edges[kk]) e = p.side === 'L' ? Math.min(e, p.edges[kk][0]) : Math.max(e, p.edges[kk][1]); } return e; };
   Object.keys(byLine).map(Number).sort((a,b)=>a-b).forEach(k => {
     const g = byLine[k].sort((x,y) => x.segs[0][0]-y.segs[0][0]), multi = g.length > 1;
-    const ents = g.map((it, i) => ({ it, num: multi ? String(i+1) : '', txt: label(it) }));
-    const total = ents.reduce((s,e) => s + tw(e.txt) + (e.num?NUMW:0), 0) + GAP*(ents.length-1);
+    const hand = it => it.cink && !it.corr ? it.cink : null;
+    const ents = g.map((it, i) => ({ it, num: multi ? String(i+1) : '', txt: hand(it) ? (it.sign || '?') : label(it), ink: hand(it) }));
+    const ew = e => e.ink ? tw(e.txt + ' (') + inkW(e.ink) + tw(')') : tw(e.txt);
+    const total = ents.reduce((s,e) => s + ew(e) + (e.num?NUMW:0), 0) + GAP*(ents.length-1);
     const want = p.lines[k] - 6 - 0.8*LH;
     let top = Math.max(want, lastBottom + 3), edge, avail, oneLine, tries = 0;
     for (;;){
@@ -338,16 +346,16 @@ function layout(p, its, occ){
     const hh = (multi ? ents.length : 1) * LH;
     if (p.side !== 'L' && occ && occ.some(([a, b]) => a < top + hh + LH && b > top)){ const ac = CX - 14 - (edge + 16); if (ac >= 90) avail = Math.min(avail, ac); }
     if (top - want > LH * 0.6){ const s = g[g.length-1].segs[0]; leaders.push({ x1: s[1] + 4, y1: s[2], x2: p.side === 'L' ? edge - 12 : edge + 12, y2: top + 0.5*LH, ids: g.map(x => x.id) }); }
-    oneLine = !multi && tw(ents[0].txt) <= avail || multi && total <= avail;
+    oneLine = !multi && ew(ents[0]) <= avail || multi && total <= avail;
     if (oneLine){
       let x = p.side === 'L' ? edge - 16 - total : edge + 16;
-      ents.forEach(e => { notes[e.it.id] = [{ x, y: top + 0.8*LH, txt:e.txt, num:e.num }]; x += tw(e.txt) + (e.num?NUMW:0) + GAP; });
+      ents.forEach(e => { notes[e.it.id] = [{ x, y: top + 0.8*LH, txt:e.txt, num:e.num, ink:e.ink, w:ew(e) }]; x += ew(e) + (e.num?NUMW:0) + GAP; });
       lastBottom = top + LH;
     } else {
       ents.forEach(e => {
-        wrap(e.txt, avail - NUMW).forEach((ln, li) => {
-          const w = tw(ln) + (e.num?NUMW:0), x = p.side === 'L' ? edge - 16 - w : edge + 16;
-          (notes[e.it.id] = notes[e.it.id] || []).push({ x, y: top + (li+0.8)*LH, txt:ln, num: li===0 ? e.num : '', indent: li>0 && e.num ? NUMW : 0 });
+        (e.ink ? [e.txt] : wrap(e.txt, avail - NUMW)).forEach((ln, li) => {
+          const w = (e.ink ? ew(e) : tw(ln)) + (e.num?NUMW:0), x = p.side === 'L' ? edge - 16 - w : edge + 16;
+          (notes[e.it.id] = notes[e.it.id] || []).push({ x, y: top + (li+0.8)*LH, txt:ln, num: li===0 ? e.num : '', indent: li>0 && e.num ? NUMW : 0, ink:e.ink, w: e.ink ? ew(e) : 0 });
           lastBottom = top + (li+1)*LH;
         });
         top = lastBottom + 3;
@@ -373,14 +381,16 @@ function drawMarks(){
       let g = `<g class="${cls}" data-id="${it.id}">`;
       const ns = notes[it.id] || [], num = nums[it.id];
       it.segs.forEach(s => { g += `<rect class="sel" x="${s[0]-4}" y="${s[2]-34}" width="${s[1]-s[0]+8}" height="42" rx="4"/>`; });
-      ns.forEach(n => { const w = tw(n.txt) + (n.num?NUMW:0) + (n.indent||0); g += `<rect class="sel" x="${n.x-4}" y="${n.y-17}" width="${w+8}" height="${LH+2}" rx="4"/>`; });
+      ns.forEach(n => { const w = (n.w || tw(n.txt)) + (n.num?NUMW:0) + (n.indent||0); g += `<rect class="sel" x="${n.x-4}" y="${n.y-17}" width="${w+8}" height="${LH+2}" rx="4"/>`; });
       it.segs.forEach((s, j) => {
         g += (s[4] === 'gap' ? `<path class="u" d="${gapPath(s)}"/>` : `<line class="u" x1="${s[0]}" y1="${s[2]}" x2="${s[1]}" y2="${s[2]}"/>`) + `<line class="hit" x1="${s[0]}" y1="${s[2]-12}" x2="${s[1]}" y2="${s[2]-12}"/>`;
         if (num && j===0) g += `<text class="num" x="${s[1]+3}" y="${s[2]-3}">${num}</text>`;
       });
       ns.forEach(n => {
         if (n.num) g += `<text class="num" x="${n.x}" y="${n.y-4}">${n.num}</text>`;
-        g += `<text x="${n.x + (n.num?NUMW:0) + (n.indent||0)}" y="${n.y}">${esc(n.txt)}</text>`;
+        const tx = n.x + (n.num?NUMW:0) + (n.indent||0), ta = n.ink ? tw(n.txt + ' (') : 0;
+        g += n.ink ? `<text x="${tx}" y="${n.y}">${esc(n.txt + ' (')}</text><path class="cink" d="${inkNote(n.ink, tx + ta, n.y)}"/><text x="${tx + ta + inkW(n.ink)}" y="${n.y}">)</text>`
+                   : `<text x="${tx}" y="${n.y}">${esc(n.txt)}</text>`;
       });
       html += g + '</g>';
     });
@@ -418,7 +428,7 @@ function renderEditor(){
   const all = items(), idx = all.indexOf(all.find(i => i.id===it.id));
   const st = { open:'offen', acc:'angenommen', rej:'verworfen' }[it.status];
   if (isI(it)) return renderEditorInhalt(it, idx, all, st);
-  const changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr);
+  const changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr || !!it.cink);
   ed.innerHTML = `<div class="card">
     <h3>${it.src==='rob' ? 'Eigene Anstreichung' : 'Vorschlag'} ${idx+1} von ${all.length}</h3>
     <div class="meta">Blatt ${it.page+1}, Zeile ${it.line}
@@ -431,7 +441,7 @@ function renderEditor(){
     <label class="f">Markierung</label>
     <div class="signs"><button data-g="0" class="${isGap(it)?'':'on'}">Unterstreichung</button><button data-g="1" class="${isGap(it)?'on':''}">Lücke (fehlendes Zeichen / Einfügung)</button></div>
     <label class="f">Positivkorrektur</label>
-    <input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. effects  ·  Streichung: -">
+    <input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. effects  ·  Streichung: -">${it.cink ? '<div class="note">✎ Positivkorrektur handschriftlich – Tippen ersetzt sie</div>' : ''}
     <label class="f">Fehlermuster (für Förderblatt und Kursstatistik)</label>
     <select id="muster"><option value="">–</option>${Object.entries(D.muster).map(([k,v]) => `<option value="${k}" ${k===it.muster?'selected':''}>${esc(v)}</option>`).join('')}</select>
     <div class="row">
@@ -442,7 +452,7 @@ function renderEditor(){
   </div>`;
   ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
   ed.querySelectorAll('.signs button[data-g]').forEach(b => b.onclick = () => setGap(it, b.dataset.g === '1'));
-  $('#corr').oninput = e => edit(it, { corr:e.target.value }, true);
+  $('#corr').oninput = e => edit(it, { corr:e.target.value, cink:null }, true);
   $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } };
   $('#muster').onchange = e => edit(it, { muster:e.target.value });
   $('#acc').onclick = () => decide(it.id, 'acc');
@@ -451,7 +461,7 @@ function renderEditor(){
   if ($('#del')) $('#del').onclick = () => { log(it.id,'gelöscht', snap(it)); cs().own = cs().own.filter(o => o.id!==it.id); cur.sel=null; refresh(); };
   $('#prev').onclick = () => step(-1); $('#nxt').onclick = () => nextOpen();
 }
-const snap = it => isI(it) ? ({ sign:it.sign, corr:it.corr, aspect:it.aspect }) : ({ sign:it.sign, corr:it.corr, muster:it.muster });
+const snap = it => isI(it) ? ({ sign:it.sign, corr:it.corr, aspect:it.aspect }) : ({ sign:it.sign, corr:it.corr, muster:it.muster, hand: !!it.cink });
 function aspectOptions(sel){
   return '<option value="">– kein EH-Aspekt –</option>' + D.eh.map(t => t.krit.filter(k => k.aspekte).map(k =>
     `<optgroup label="${esc(t.teil)}: ${esc(k.t)}">${k.aspekte.map(a => `<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.t)}</option>`).join('')}</optgroup>`).join('')).join('');
@@ -476,7 +486,7 @@ function renderEditorInhalt(it, idx, all, st){
     <div class="row"><button class="btn" id="prev">← Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
   </div>`;
   ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
-  if ($('#corr')){ $('#corr').oninput = e => edit(it, { corr:e.target.value }, true); $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } }; }
+  if ($('#corr')){ $('#corr').oninput = e => edit(it, { corr:e.target.value, cink:null }, true); $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } }; }
   $('#aspect').onchange = e => edit(it, { aspect:e.target.value });
   $('#acc').onclick = () => decide(it.id, 'acc');
   if ($('#rej')) $('#rej').onclick = () => decide(it.id, 'rej');
@@ -501,7 +511,7 @@ function decide(id, status){
   const it = items().find(i => i.id===id); if (!it) return;
   if (it.src==='claude'){
     const d = cs().dec[id] = cs().dec[id] || {}; d.status = status;
-    const changed = it.sign!==it.orig.sign || it.corr!==it.orig.corr || (isI(it) && it.aspect!==it.orig.aspect);
+    const changed = it.sign!==it.orig.sign || it.corr!==it.orig.corr || !!it.cink || (isI(it) && it.aspect!==it.orig.aspect);
     log(id, status==='acc' ? (changed?'geändert':'angenommen') : 'verworfen', snap(it.orig), status==='acc'?snap(it):null);
   }
   save(); nextOpen(true);
@@ -806,9 +816,38 @@ $('#tools').addEventListener('click', e => { const b = e.target.closest('button[
 $('#undoBtn').onclick = () => undoInk();
 $('#finger').onchange = () => updTools();
 
+// ---------- Handschriftliche Positivkorrektur ----------
+// Gespeichert als Vektorstriche in Schreibflächen-Koordinaten { h: Höhe der Fläche, s: [[ [x,y], … ], …] };
+// in der Randspalte auf Texthöhe skaliert (Fläche 90 px hoch -> 42 Einheiten, Hilfslinie der Fläche = Grundlinie des Textes).
+const INKH = 42;
+function inkBox(k){ let a = 1e9, b = -1e9; k.s.forEach(st => st.forEach(q => { a = Math.min(a, q[0]); b = Math.max(b, q[0]); })); return [a, b]; }
+function inkW(k){ const [a, b] = inkBox(k); return (b - a) * INKH / k.h + 4; }
+function inkNote(k, x, y){ const a = inkBox(k)[0], sc = INKH / k.h; return k.s.map(st => inkD(st.map(q => [r1(x + 2 + (q[0] - a) * sc), r1(y + (q[1] - k.h * 62 / 90) * sc)]))).join(' '); }
+let lastPtr = matchMedia('(any-pointer:coarse)').matches ? 'touch' : 'mouse', keepPop = false;
+document.addEventListener('pointerdown', e => { lastPtr = e.pointerType || lastPtr; }, true);
+const usePad = () => cur.pad != null ? cur.pad : lastPtr !== 'mouse';
+function initPad(el, it){
+  const cv = el.querySelector('.qpad canvas'); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = 90, g = cv.getContext('2d');
+  cv.width = W * dpr; cv.height = H * dpr; g.scale(dpr, dpr); g.lineWidth = 2.6; g.lineCap = g.lineJoin = 'round'; g.strokeStyle = '#8f1010';
+  const strokes = it.cink ? it.cink.s.map(x => x.slice()) : []; let cs_ = null;
+  const draw = () => { g.clearRect(0, 0, W, H); strokes.concat(cs_ ? [cs_] : []).forEach(x => g.stroke(new Path2D(inkD(x)))); };
+  const pt = e => { const r = cv.getBoundingClientRect(); return [r1(e.clientX - r.left), r1(e.clientY - r.top)]; };
+  draw();
+  cv.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); try { cv.setPointerCapture(e.pointerId); } catch(_){}
+    cs_ = [pt(e)]; const ph = el.querySelector('.qph'); if (ph) ph.remove(); draw(); });
+  cv.addEventListener('pointermove', e => { if (!cs_) return; e.preventDefault();
+    const ce = e.getCoalescedEvents ? e.getCoalescedEvents() : []; (ce.length ? ce : [e]).forEach(ev => cs_.push(pt(ev))); draw(); });
+  const up = () => { if (!cs_) return; strokes.push(cs_); cs_ = null;
+    keepPop = true; try { edit(it, { cink: { h: H, s: strokes }, corr: '' }, true); } finally { keepPop = false; } };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+}
+
 // ---------- Schnellmenü an der Anstreichung (Antippen / Klicken) ----------
 const popMore = new Set();
 function renderPop(){
+  if (keepPop) return;
   document.querySelectorAll('.qpop').forEach(x => { if (!cur || x.dataset.id !== cur.sel || !(x.contains(document.activeElement) && document.activeElement.matches('input'))) x.remove(); });
   if (!cur || !cur.sel || (cur.own && cur.own !== 'sprache')) return;
   if (document.querySelector('.qpop')) return;               // wird gerade beschrieben
@@ -821,8 +860,11 @@ function renderPop(){
       : `<div class="qlab">${esc(anyLabel(it))}</div><div class="qmeta">${it.conf==='unsicher' ? 'Lesung unsicher · ' : it.conf==='ermessen' ? 'Ermessensfrage · ' : ''}${st}</div>
          <div class="qrow"><button class="qa" data-q="acc">✓ Annehmen</button><button class="qr" data-q="rej">✗ Verwerfen</button>${inh ? '' : `<button data-q="more">${more ? '▴' : 'Ändern'}</button>`}</div>`)
     + (more ? `<div class="qrow signs">${SIGNS.map(x => `<button data-s="${esc(x)}" class="${x===it.sign?'on':''}">${esc(x)}</button>`).join('')}</div>
-         <input type="text" class="qcorr" value="${esc(it.corr||'')}" placeholder="Positivkorrektur (optional) · Streichung: -">
-         <div class="qrow"><button data-q="gap" class="${isGap(it)?'on':''}">Lücke</button>${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done">Fertig</button>` : ''}</div>` : '');
+         ${usePad() ? `<div class="qpad"><canvas></canvas>${it.cink ? '' : '<span class="qph">Positivkorrektur hier schreiben (optional)</span>'}</div>`
+                    : `<input type="text" class="qcorr" value="${esc(it.corr||'')}" placeholder="Positivkorrektur (optional) · Streichung: -">`}
+         <div class="qrow"><button data-q="gap" class="${isGap(it)?'on':''}">Lücke</button>${usePad()
+           ? `<button data-q="clr">Leeren</button><button data-q="kbd" title="Positivkorrektur tippen">⌨</button>`
+           : `<button data-q="pen" title="Positivkorrektur mit Stift oder Maus schreiben">✎</button>`}${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done">Fertig</button>` : ''}</div>` : '');
   page.appendChild(el);
   const P = codeData().pages[it.page], s = it.segs[it.segs.length-1], sc = page.clientWidth / P.w, w = el.offsetWidth, h = el.offsetHeight;
   let x = s[0] * sc, y = (s[2] + 14) * sc;
@@ -836,11 +878,14 @@ function renderPop(){
     if (q === 'acc' || q === 'rej') decide(it.id, q);
     else if (q === 'more'){ popMore.has(it.id) ? popMore.delete(it.id) : popMore.add(it.id); el.remove(); renderPop(); }
     else if (q === 'gap') setGap(it, !isGap(it));
+    else if (q === 'clr') edit(it, { cink: null });
+    else if (q === 'kbd' || q === 'pen'){ cur.pad = q === 'pen'; el.remove(); renderPop(); const i2 = document.querySelector('.qpop .qcorr'); if (i2) i2.focus(); }
     else if (q === 'del'){ log(it.id, 'gelöscht', snap(it)); cs().own = cs().own.filter(o => o.id !== it.id); cur.sel = null; refresh(); }
     else if (q === 'done'){ cur.sel = null; refresh(); }
   };
+  initPad(el, it);
   const inp = el.querySelector('.qcorr');
-  if (inp){ inp.oninput = () => edit(it, { corr: inp.value }, true);
+  if (inp){ inp.oninput = () => edit(it, { corr: inp.value, cink: null }, true);
     inp.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); inp.blur(); if (own){ cur.sel = null; refresh(); } else decide(it.id, 'acc'); } }; }
 }
 
@@ -906,7 +951,10 @@ async function pageCanvas(code, pi){
       if (nums[it.id] && j === 0){ g.font = 'bold 13px Helvetica, Arial, sans-serif'; g.fillText(nums[it.id], s[1] + 3, s[2] - 3); } });
     (notes[it.id] || []).forEach(n => {
       if (n.num){ g.font = 'bold 13px Helvetica, Arial, sans-serif'; g.fillText(n.num, n.x, n.y - 4); }
-      g.font = FONT; g.fillText(n.txt, n.x + (n.num ? NUMW : 0) + (n.indent || 0), n.y);
+      g.font = FONT; const tx = n.x + (n.num ? NUMW : 0) + (n.indent || 0);
+      if (n.ink){ const ta = tw(n.txt + ' ('); g.fillText(n.txt + ' (', tx, n.y); g.save(); g.lineWidth = 2.2; g.setLineDash([]); g.globalAlpha = 1;
+        g.stroke(new Path2D(inkNote(n.ink, tx + ta, n.y))); g.restore(); g.fillText(')', tx + ta + inkW(n.ink), n.y); }
+      else g.fillText(n.txt, tx, n.y);
     });
   });
   g.save(); g.setLineDash([]); g.globalAlpha = 1; g.lineWidth = INKW; g.lineCap = 'round'; g.lineJoin = 'round';

@@ -1,0 +1,30 @@
+<div id="prep"><div class="pwrap">
+  <div class="phead"><h2>Klausur mit AIS.chat vorbereiten</h2><button class="tool" id="prepBack">Zurück</button></div>
+  <p class="note">Alles geschieht in diesem Browser. Zu AIS.chat gehen nur die Bildausschnitte der Schreibzeilen (ohne Namen) und die Texte, die du selbst dort einfügst.</p>
+
+  <section class="pstep" id="prepS1"><h3><span>1</span>Scan einlesen</h3>
+    <p>Sammelscan des Kurses (PDF, Farbe oder Graustufen) oder einzelne Seiten als JPG/PNG. Die Seiten werden über Ankerpunkte ausgerichtet und per QR-Code den Codes zugeordnet.</p>
+    <div class="row"><button class="btn pri" id="prepScanBtn">Scan wählen …</button><input type="file" id="prepScan" accept=".pdf,.jpg,.jpeg,.png" multiple hidden>
+      <button class="btn" id="prepMetaBtn" title="Erwartungshorizont und Notenschlüssel für die Bewertung">Klausurdatei (optional) …</button><input type="file" id="prepMeta" accept=".json" hidden></div>
+    <div class="pst" id="scanStatus">Noch kein Scan gewählt.</div><div class="pst" id="metaStatus">Ohne Klausurdatei werden ein allgemeiner Sprachraster und ein Platzhalter für den Inhalt verwendet.</div>
+  </section>
+
+  <section class="pstep off" id="prepS2"><h3><span>2</span>Bilder an AIS.chat schicken (Assistent „Abschrift“)</h3>
+    <p id="upSum"></p>
+    <div class="row"><label class="chk">Bildformat <select id="upMode"><option value="s16" selected>Zeilenstreifen, 16 Zeilen je Bild (Standard)</option><option value="s13">Zeilenstreifen, 13 Zeilen je Bild (schärfer, mehr Bilder)</option><option value="halb">Halbseiten (alter Assistent „Abschrift“)</option></select></label></div>
+    <div class="row"><button class="btn pri" id="upZip">Bilder als ZIP herunterladen</button></div>
+    <p class="note">ZIP entpacken. Im Assistenten „Abschrift“ einen Chat öffnen und je Ordner eine Nachricht senden (alle Bilder des Ordners). Alle Antworten in denselben Chat.</p>
+    <details><summary>Nachrichten im Einzelnen</summary><div id="upList"></div></details><div id="upPrev"></div>
+  </section>
+
+  <section class="pstep off" id="prepS3"><h3><span>3</span>Antworten einfügen</h3>
+    <div class="two">
+      <div><label for="taA"><b>Abschrift</b> (Antworten des Assistenten „Abschrift“, alle hintereinander)</label><textarea id="taA" spellcheck="false" placeholder="### CODE 23&#10;### TEXT&#10;B1 Z1: …"></textarea>
+        <div class="row"><button class="btn" id="copyAllB">Alle Abschriften für Assistent „Korrektur“ kopieren</button></div></div>
+      <div><label for="taB"><b>Fehlerliste</b> (Antworten des Assistenten „Korrektur“, alle hintereinander)</label><textarea id="taB" spellcheck="false" placeholder="### CODE 23&#10;### FEHLER&#10;B1 Z5 | think | G | thinks | SVA | s"></textarea></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="skipLese" checked> Vermutete Lesefehler weglassen <span class="note">(Punkt statt Komma gelesen, Zeilenangaben) – sonst werden sie als „unsicher“ übernommen</span></label>
+    <table id="repTab"></table>
+    <div class="row end"><span id="prepReady" class="note"></span><button class="btn" id="prepSave" disabled>Vorkorrektur-PDF speichern</button><button class="btn pri" id="prepOpen" disabled>In der Arbeitsfläche öffnen</button></div>
+  </section>
+</div></div>
