@@ -1,0 +1,1084 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Korrektur-Arbeitsfläche</title>
+<style>
+:root{
+  --bg:#eceef1; --panel:#ffffff; --ink:#1d2329; --muted:#66707a; --line:#d9dde2; --soft:#f4f5f7;
+  --red:#8f1010; --amber:#b26b00; --grey:#9aa0a6; --ok:#1f7a4d; --sel:rgba(255,214,0,.38); --accent:#2b4c7e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+button{font:inherit;cursor:pointer}
+header{height:58px;display:flex;align-items:center;gap:16px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+header h1{font-size:15px;margin:0;font-weight:650;white-space:nowrap}
+header .sub{font-size:12px;color:var(--muted);white-space:nowrap}
+.codes{display:flex;gap:6px;margin-left:12px}
+.codes button{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:flex-start;min-width:118px}
+.codes button.on{border-color:var(--accent);background:#e8eef7}
+.codes b{font-size:13px}.codes small{font-size:11px;color:var(--muted)}
+.bar{height:3px;background:var(--line);border-radius:2px;width:100%;margin-top:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
+.spacer{flex:1}
+.tool{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;white-space:nowrap;font-size:13px}
+.tool:hover{background:var(--soft)}
+.tool.on{background:var(--red);color:#fff;border-color:var(--red)}
+.saved{font-size:11px;color:var(--muted);white-space:nowrap}
+body{display:flex;flex-direction:column}header{flex:none}main{display:flex;flex:1;min-height:0}
+#viewer{flex:1;overflow:auto;padding:0 24px 80px}
+.vbar{position:sticky;top:0;z-index:5;display:flex;gap:18px;align-items:center;padding:8px 4px;margin-bottom:10px;background:var(--bg);font-size:12.5px;color:var(--muted)}
+.vbar input[type=range]{width:110px;vertical-align:middle}
+.lay{display:flex;gap:10px;align-items:center}.lay label{display:flex;gap:4px;align-items:center}
+.legend{margin-left:auto;display:flex;gap:6px;align-items:center}.legend i{display:inline-block;width:22px;height:0;border-top:2.5px solid var(--red);margin-left:10px}.legend i.lo{border-top-style:dashed}.legend i.lu{border-top:2.5px dashed var(--amber)}
+#viewer.own .ov{cursor:crosshair}
+.page{position:relative;margin:26px auto 22px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.page img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.page .ov{position:absolute;inset:0;width:100%;height:100%}
+.page .lbl{position:absolute;left:-2px;top:-18px;font-size:11px;color:var(--muted)}
+svg text{font-family:Helvetica,Arial,sans-serif}
+.mk line.u,.mk path.u{stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;fill:none}
+svg line.lead{stroke:var(--red);stroke-width:1.2;stroke-dasharray:3 4;opacity:.55}
+.mk line.hit{stroke:transparent;stroke-width:22;cursor:pointer}
+.mk text{font-size:18px;cursor:pointer}
+.mk text.num{font-size:13px;font-weight:700}
+.mk.open line.u,.mk.open path.u{stroke:var(--red);stroke-dasharray:7 5;opacity:.85}
+.mk.open text{fill:var(--red);opacity:.85;font-style:italic}
+.mk.uns line.u,.mk.uns path.u{stroke:var(--amber)} .mk.uns text{fill:var(--amber)}
+.mk.acc line.u,.mk.acc path.u{stroke:var(--red)} .mk.acc text{fill:var(--red)}
+.mk.rej line.u,.mk.rej path.u{stroke:var(--grey);stroke-dasharray:2 5} .mk.rej text{fill:var(--grey);text-decoration:line-through}
+.mk .hk,.mk .bar{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.mk.open .hk,.mk.open .bar{stroke:var(--red);opacity:.6}.mk.open .bar{stroke-dasharray:7 5}
+.mk.acc .hk,.mk.acc .bar{stroke:var(--red)}.mk.rej .hk,.mk.rej .bar{stroke:var(--grey)}
+.mk text.par{font-size:20px}.mk rect.hitbox{fill:transparent;cursor:pointer}
+.mk rect.sel{fill:var(--sel);display:none}.mk.selected rect.sel{display:block}
+#tmp{stroke:var(--red);stroke-width:2.6}
+#ownBtn.on{background:var(--red);color:#fff;border-color:var(--red)}
+aside{width:410px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;border:0;background:none;padding:12px 0;color:var(--muted);border-bottom:2px solid transparent}
+.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.pane{flex:1;overflow:auto;padding:14px 16px;display:none}.pane.on{display:block}
+.card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:#fff}
+.card h3{margin:0 0 8px;font-size:13px;font-weight:650}
+.meta{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:var(--soft);border:1px solid var(--line);color:var(--ink)}
+.badge.e{background:#f3ecfb;border-color:#d9c7ef}.badge.u{background:#fff3df;border-color:#f0cf96;color:#7a4a00}
+.badge.r{background:#fbeaea;border-color:#efc4c4}.badge.i{background:#e7f5ee;border-color:#b9e0cb}.badge.c{background:#e8eef7;border-color:#c5d3ea}
+.signs{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
+.signs button{border:1px solid var(--line);background:var(--soft);border-radius:6px;padding:4px 8px;min-width:36px}
+.signs button.on{background:var(--red);border-color:var(--red);color:#fff}
+label.f{display:block;font-size:12px;color:var(--muted);margin:6px 0 3px}
+input[type=text],select,textarea{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:inherit;background:#fff}
+textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff}
+.btn.pri{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.neg{color:var(--red);border-color:#e3b9b9}
+.btn small{opacity:.75;font-size:11px;margin-left:4px}
+.empty{color:var(--muted);font-size:13px}
+.list{border-top:1px solid var(--line);margin-top:4px}
+.li{display:grid;grid-template-columns:18px 54px 1fr auto;gap:6px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--soft);cursor:pointer;font-size:13px}
+.li:hover{background:var(--soft)} .li.on{background:#fff7cc}
+.li .st{font-size:13px;text-align:center}.li .pos{color:var(--muted);font-size:12px}
+.filters{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
+.filters button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 10px;font-size:12px}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.eh h4{margin:14px 0 6px;font-size:13px;display:flex;justify-content:space-between}
+.eh .k{display:grid;grid-template-columns:1fr 64px 34px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--soft);font-size:13px}
+.eh .k input{width:64px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right;font:inherit}
+.eh .k input.bad{border-color:var(--red);background:#fbeaea}
+.eh .hint{grid-column:1/-1;font-size:11.5px;color:var(--muted);margin-top:-2px}
+.asp{grid-column:1/-1;margin:2px 0 4px 6px;font-size:12px}.asum{color:var(--muted);margin-bottom:3px}
+.ar{display:grid;grid-template-columns:28px 1fr;gap:4px;padding:2px 4px;border-radius:5px}.ar[data-jump]{cursor:pointer}.ar[data-jump]:hover{background:var(--soft)}
+.ar b{color:var(--red)}.ar.no{color:var(--grey)}.ar.no b{color:var(--grey)}.ar.vo span{color:var(--muted)}.ar i{font-style:italic;color:var(--muted)}
+.sum{position:sticky;bottom:-14px;background:#fff;border-top:1px solid var(--line);padding:10px 0;margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.sum div{font-size:11px;color:var(--muted)}.sum b{display:block;font-size:17px;color:var(--ink)}
+.hbar{display:grid;grid-template-columns:1fr 120px 26px;gap:8px;align-items:center;font-size:13px;margin:4px 0}
+.hbar .t{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.hbar .t i{display:block;height:100%;background:var(--red)}
+.note{font-size:12px;color:var(--muted);line-height:1.45}
+.fl{margin:8px 0 10px;border-top:1px solid var(--line)}
+.fr{display:grid;grid-template-columns:1fr auto 34px;gap:8px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--soft);font-size:13px}
+.chips{display:flex;gap:4px}.chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 9px;font-size:11.5px;color:var(--muted)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}.chip.reco{box-shadow:0 0 0 2px #2e9d63}
+details.more summary{cursor:pointer;font-size:12.5px;color:var(--accent);margin:6px 0}
+.fr small{display:block;color:var(--muted);font-size:11.5px}
+.chk{font-size:12.5px;display:flex;gap:6px;align-items:center}
+kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff}
+#printSummary{display:none}
+body:not(.loaded) .nd{display:none}
+body.noinhalt .lay,body.noinhalt [data-own="haken"],body.noinhalt [data-own="rand"]{display:none}
+#start{display:none;position:fixed;inset:58px 0 0 0;background:var(--bg);z-index:30;align-items:center;justify-content:center}
+#start .drop{background:#fff;border:2px dashed var(--line);border-radius:16px;padding:40px 48px;text-align:center;max-width:560px}
+#start .drop.over{border-color:var(--accent);background:#f3f6fb}
+#start h2{margin:0 0 10px;font-size:20px}#start p{margin:10px 0}#start .small{font-size:12px}
+#start .err{color:var(--red);font-size:13px;min-height:1em}
+.tool.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.menu{position:relative}.menu summary{list-style:none}.menu summary::-webkit-details-marker{display:none}
+.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);padding:6px;z-index:20;min-width:210px}
+.menu .pop button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:6px}
+.menu .pop button:hover{background:var(--soft)}
+.menu .pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+#resetCode,#resetAll{color:var(--red)}
+.codes{align-items:center}
+.codes .nav{border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;min-width:0;height:34px;font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
+.codes .nav:disabled{opacity:.35;cursor:default}
+.codes .cbox{display:flex;flex-direction:column;gap:3px;width:230px}
+.codes .cbox small{font-size:11px;color:var(--muted)}
+.codes select{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font:inherit;font-weight:600;background:#fff}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;max-width:560px;display:none;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.2)}
+#fatal{display:none;position:fixed;inset:0;background:rgba(236,238,241,.97);z-index:60;align-items:center;justify-content:center}
+#fatal .card{max-width:520px}
+/* ---------- Touch & Stift ---------- */
+#viewer{-webkit-user-select:none;user-select:none}
+.page{touch-action:pan-x pan-y}
+#viewer.fdraw .page{touch-action:none}
+.page img,.page svg{-webkit-touch-callout:none}
+.vbar{flex-wrap:wrap;row-gap:6px}
+.tools{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tools button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--ink)}
+.tools button.on{background:var(--red);border-color:var(--red);color:#fff}
+.tools button[data-m=""].on{background:var(--ink);border-color:var(--ink)}
+.tools button:disabled{opacity:.4;cursor:default}
+.tools .fd{display:flex;gap:4px;align-items:center;margin-left:4px}
+body.noinhalt #ownMenu{display:none}
+svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+#viewer.erase svg.ov{cursor:cell}
+.qpop{position:absolute;z-index:4;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.18);padding:8px;width:min(330px,90vw);font-size:13px}
+.qpop .qlab{font-weight:650;color:var(--red);margin:0 2px 2px;font-size:16px}
+.qpop .qmeta{font-size:11.5px;color:var(--muted);margin:0 2px}
+.qpop .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.qpop button{white-space:nowrap;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:7px 12px;min-width:44px;font-size:14px}
+.qpop button.qa{background:var(--ok);border-color:var(--ok);color:#fff;flex:1}
+.qpop button.qr{color:var(--red);border-color:#e3b9b9;background:#fff;flex:1}
+.qpop button.on{background:var(--red);border-color:var(--red);color:#fff}
+.qpop .signs button{padding:6px 0;min-width:44px}
+.qpop input{margin-top:7px}
+@media (any-pointer:coarse){
+  .tool,.btn{min-height:44px}
+  .tools button{min-height:40px;padding:6px 12px}
+  .signs button{min-height:40px;min-width:44px}
+  .li{padding:11px 4px}
+  .filters button,.chip{padding:7px 12px}
+  .mk line.hit{stroke-width:44}
+  .codes .nav{height:44px;width:40px}
+  .codes select{min-height:40px}
+  .menu .pop button{padding:12px 10px}
+  .qpop button{padding:10px 12px}
+}
+@media (max-width:1180px){ aside{width:340px} header .sub,.legend{display:none} .codes .cbox{width:190px} }
+@media (max-width:900px){
+  header{flex-wrap:wrap;height:auto;padding:6px 10px;gap:8px}
+  main{flex-direction:column}
+  aside{width:auto;height:42vh;border-left:0;border-top:1px solid var(--line)}
+  #viewer{padding:0 8px 40px}
+}
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff;height:auto}
+  body{display:block}
+  .qpop{display:none!important}
+  header,aside,.page .lbl,.vbar{display:none!important}
+  main{display:block;height:auto}
+  #viewer{padding:0;overflow:visible}
+  .page{width:210mm!important;height:297mm;margin:0;box-shadow:none;page-break-after:always;break-after:page}
+  .mk.open,.mk.rej{display:none}
+  .mk rect.sel{display:none!important}
+  #printSummary{display:block;padding:18mm 18mm;font-size:11pt}
+  #toast,#fatal{display:none!important}
+  #printSummary table{border-collapse:collapse;width:100%;margin-top:6mm}
+  #printSummary td,#printSummary th{border-bottom:1px solid #ccc;padding:4px 6px;text-align:left}
+  #printSummary td.n{text-align:right;white-space:nowrap}
+}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Korrektur-Arbeitsfläche</h1><div class="sub" id="ktitle"></div></div>
+  <div class="codes" id="codes"></div>
+  <div class="spacer"></div>
+  <span class="saved" id="saved"></span>
+  <button class="tool" id="openBtn" title="Vorkorrektur-PDF öffnen">Datei öffnen</button>
+  <input type="file" id="openFile" accept=".pdf,application/pdf" multiple hidden>
+  <details class="menu nd" id="ownMenu"><summary class="tool" id="ownBtn">✎ Anstreichen ▾</summary>
+    <div class="pop"><button data-own="sprache">Sprache: Wort unterstreichen <kbd>E</kbd></button><button data-own="haken">Inhalt: Haken im Text <kbd>H</kbd></button><button data-own="rand">Inhalt: Randstrich ziehen <kbd>R</kbd></button></div></details>
+  <details class="menu nd" id="standMenu"><summary class="tool">Korrekturstand ▾</summary>
+    <div class="pop"><button id="exportBtn">Als Datei sichern …</button><button id="importBtn">Aus Datei laden …</button><hr>
+    <button id="resetCode">Diesen Code zurücksetzen</button><button id="resetAll">Ganze Klausur zurücksetzen</button></div></details>
+  <details class="menu nd" id="pdfMenu"><summary class="tool pri">PDF exportieren</summary>
+    <div class="pop"><button id="pdfOne">Dieser Code</button><button id="pdfAll">Alle Codes (eine Datei)</button><button id="printBtn">Drucken …</button></div></details>
+  <input type="file" id="importFile" accept=".json" hidden>
+</header>
+<main>
+  <div id="viewer"><div class="vbar"><span class="tools nd" id="tools"><button data-m="" class="on" title="Auswählen: Vorschlag antippen (Esc)">☝ Auswählen</button><button data-m="sprache" title="Wort unterstreichen, dann Zeichen antippen (E)">▁ Unterstreichen</button><button data-m="ink" title="Freihand schreiben (F)">✎ Freihand</button><button data-m="erase" title="Freihand-Striche löschen">⌫ Radierer</button><button id="undoBtn" title="Freihand rückgängig (Strg+Z)" disabled>↶</button><label class="fd" title="Ohne Stift: Finger zeichnet statt zu scrollen"><input type="checkbox" id="finger"> Finger zeichnet</label></span><span class="lay">Anzeigen: <label><input type="checkbox" id="showS" checked> Sprache</label><label><input type="checkbox" id="showI" checked> Inhalt</label></span><label><input type="checkbox" id="showRej"> Verworfene</label><label>Zoom <input type="range" id="zoom" min="40" max="200" value="80"></label><span class="legend"><i class="lo"></i>offener Vorschlag <i class="lu"></i>Lesung unsicher <i class="la"></i>angenommen / eigene</span></div><div id="pages"></div></div>
+  <aside>
+    <div class="tabs"><button data-t="pruefen" class="on">Prüfen</button><button data-t="bewertung">Bewertung</button><button data-t="fehlerbild">Förderung</button></div>
+    <div class="pane on" id="pane-pruefen">
+      <div id="editor"></div>
+      <div class="filters" id="filters"></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="pane eh" id="pane-bewertung"></div>
+    <div class="pane" id="pane-fehlerbild"></div>
+  </aside>
+</main>
+<div id="printSummary"></div>
+<div id="toast" role="status"></div>
+<div id="start"><div class="drop" id="drop">
+  <h2>Korrektur-Arbeitsfläche</h2>
+  <p>Öffne die <b>Vorkorrektur-PDF</b>, die Claude für deinen Kurs erstellt hat.<br>Du kannst auch mehrere Dateien derselben Klausur auf einmal wählen.</p>
+  <button class="btn pri" id="startOpen">Vorkorrektur-PDF öffnen …</button>
+  <p class="note">oder Datei hierher ziehen</p>
+  <p class="note small">Die Datei wird nur in diesem Browser gelesen. Es wird nichts hochgeladen.<br>Dein Korrekturstand wird pro Klausur im Browser gespeichert; „Stand sichern“ legt zusätzlich eine Sicherungsdatei an.</p>
+  <p class="err" id="startErr"></p>
+</div></div>
+<div id="fatal"><div class="card"><h3>Die Arbeitsfläche konnte nicht starten</h3><p class="note" id="fatalMsg"></p>
+<p class="note">Meist liegt das an einem beschädigten gespeicherten Stand. Er wird beim Zurücksetzen als Datei gesichert, falls möglich.</p>
+<div class="row"><button class="btn pri" id="fatalReset">Gespeicherten Stand zurücksetzen und neu starten</button></div></div></div>
+
+<script id="data" type="application/json">/*DATA*/</script>
+<script>
+'use strict';
+let D = null, STORE = '', S = null, cur = null;
+try { const t = document.getElementById('data').textContent.trim(); if (t && t !== '/*DATA*/') D = JSON.parse(t); } catch(e){ D = null; }
+const SIGNS = ['R','G','W','A','Sb','St','Z','Präp','Wdh','Г'];
+const FONT = '18px Helvetica, Arial, sans-serif', LH = 21, NUMW = 14, GAP = 16;
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ctx = document.createElement('canvas').getContext('2d'); ctx.font = FONT;
+const tw = s => ctx.measureText(s).width;
+
+// ---------- Zustand ----------
+function fresh(){ return normalize({ v:1, codes:{}, log:[] }); }
+function normalize(s){
+  if (!s || s.v !== 1 || typeof s.codes !== 'object' || !s.codes) return null;
+  if (!Array.isArray(s.log)) s.log = [];
+  D.codes.forEach(c => { const x = s.codes[c.code] = (s.codes[c.code] && typeof s.codes[c.code] === 'object') ? s.codes[c.code] : {};
+    x.dec = (x.dec && typeof x.dec === 'object') ? x.dec : {};
+    x.own = Array.isArray(x.own) ? x.own.filter(o => o && Array.isArray(o.segs) && o.segs.length && o.page < c.pages.length) : [];
+    x.ink = Array.isArray(x.ink) ? x.ink.filter(o => o && Array.isArray(o.pts) && o.pts.length && o.page < c.pages.length) : [];
+    x.pts = (x.pts && typeof x.pts === 'object') ? x.pts : {}; x.kommentar = typeof x.kommentar === 'string' ? x.kommentar : '';
+    const f = x.foerder = (x.foerder && typeof x.foerder === 'object') ? x.foerder : {}; f.manual = !!f.manual; f.sel = Array.isArray(f.sel) ? f.sel : []; f.aktiv = f.aktiv !== false; f.loesung = f.loesung !== false; });
+  return s;
+}
+function load(){ try { return normalize(JSON.parse(localStorage.getItem(STORE))); } catch(e){ return null; } }
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); $('#saved').textContent = 'automatisch gesichert ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ $('#saved').textContent = 'nicht gesichert – bitte „Stand sichern“'; } }
+function log(id, action, before, after){ S.log.push({ t:new Date().toISOString(), code:cur.code, id, action, before, after }); }
+
+const codeData = () => D.codes.find(c => c.code === cur.code);
+const cs = () => S.codes[cur.code];
+function items(code){
+  const c = D.codes.find(x => x.code === (code||cur.code)), st = S.codes[c.code];
+  const a = c.sug.map(s => { const d = st.dec[s.id] || {}; const segs = d.gap === true ? s.segs.slice(-1).map(toGap) : d.gap === false ? s.segs.map(x => x[4] === 'gap' ? [x[0] - 30, x[0] + 8, x[2], x[3]] : x) : s.segs;
+    return Object.assign({}, s, { src:'claude', status:d.status||'open', sign:d.sign??s.sign, corr:d.corr??s.corr, muster:d.muster??s.muster, segs, orig:s }); });
+  const ci = (c.inhalt || []).map(s => { const d = st.dec[s.id] || {};
+    return Object.assign({}, s, { src:'claude', layer:'inhalt', status:d.status||'open', sign:d.sign??s.sign, corr:d.corr??s.corr, aspect:d.aspect??s.aspect, orig:s }); });
+  const b = st.own.map(o => Object.assign({ src:'rob', status:'acc', conf:'sicher', layer:'sprache' }, o));
+  return a.concat(ci, b).sort((x,y) => x.page-y.page || x.line-y.line || x.segs[0][0]-y.segs[0][0]);
+}
+const final = it => it.status === 'acc';
+const isI = it => it.layer === 'inhalt';
+const vis = it => !cur.show || cur.show[isI(it) ? 'inhalt' : 'sprache'];
+const CX = 1080, ISIGNS = { haken: ['✓', '(✓)'], rand: ['f', 'too vague', 'evidence', 'Wdh', '?'] };
+const labelI = it => it.kind === 'haken' ? `${it.sign}${it.aspect ? ' ' + it.aspect : ''}` : (it.sign || '?') + (it.corr ? ': ' + it.corr : '');
+const anyLabel = it => isI(it) ? labelI(it) : label(it);
+function aspectText(id){ for (const t of D.eh) for (const k of t.krit) for (const a of (k.aspekte || [])) if (a.id === id) return a.t; return ''; }
+const label = it => (it.sign || '?') + (it.corr ? ' (' + it.corr + ')' : '') + (it.status==='open' && it.conf==='unsicher' ? ' ?' : '');
+
+// ---------- Seiten ----------
+function renderPages(){
+  const v = $('#pages'); v.innerHTML = '';
+  codeData().pages.forEach((p, i) => {
+    const d = document.createElement('div'); d.className = 'page'; d.dataset.i = i;
+    d.innerHTML = `<div class="lbl">Code ${esc(cur.code)} · Blatt ${i+1}</div><img src="${p.img}" alt="Blatt ${i+1}"><svg class="ov" viewBox="0 0 ${p.w} ${p.h}" preserveAspectRatio="none"></svg>`;
+    v.appendChild(d);
+  });
+  applyZoom(); drawMarks();
+}
+function applyZoom(){ document.querySelectorAll('.page').forEach(p => p.style.width = (9.5 * $('#zoom').value) + 'px'); }
+
+function inhaltLayout(p, its){
+  const haken = [], rand = [], occ = []; let last = -1;
+  its.filter(i => i.kind === 'haken').forEach(it => haken.push({ it, x: it.x, y: it.y, half: it.sign === '(✓)' }));
+  its.filter(i => i.kind === 'rand').sort((a, b) => a.y0 - b.y0).forEach(it => {
+    let bx = CX; for (let k = it.lines[0]; k <= it.lines[1]; k++) if (p.edges[k] && p.edges[k][1] + 14 > bx) bx = p.edges[k][1] + 14;
+    const tx = bx + 9, w = Math.max(90, p.w - tx - 10), lines = wrap(labelI(it), w);
+    const top = Math.max(it.y0 + 2, last + 3);
+    const L = lines.map((t, i) => ({ x: tx, y: top + (i + 0.8) * LH, txt: t }));
+    last = top + lines.length * LH; occ.push([it.y0, Math.max(it.y1, last)]);
+    rand.push({ it, bx, y0: it.y0, y1: Math.max(it.y1, it.y0 + LH), L, w: Math.max(...lines.map(tw)) });
+  });
+  return { haken, rand, occ };
+}
+function layout(p, its, occ){
+  // Randnotizen: Spalte am Korrekturrand; ragt Schülerschrift in den Rand, rückt die Notiz nach rechts
+  // oder – wenn dort zu wenig Platz ist – nach unten auf den nächsten freien Platz (mit Verbindungslinie).
+  const byLine = {}; its.forEach(it => (byLine[it.line] = byLine[it.line] || []).push(it));
+  const notes = {}, nums = {}, leaders = []; let lastBottom = -1;
+  const MINW = 150, right = (y0, y1) => { let e = p.side === 'L' ? p.lt : p.rt;
+    for (let kk = 1; kk < p.lines.length; kk++){ const ky0 = p.lines[kk] - 52, ky1 = p.lines[kk] + 8;
+      if (ky1 > y0 && ky0 < y1 && p.edges[kk]) e = p.side === 'L' ? Math.min(e, p.edges[kk][0]) : Math.max(e, p.edges[kk][1]); } return e; };
+  Object.keys(byLine).map(Number).sort((a,b)=>a-b).forEach(k => {
+    const g = byLine[k].sort((x,y) => x.segs[0][0]-y.segs[0][0]), multi = g.length > 1;
+    const ents = g.map((it, i) => ({ it, num: multi ? String(i+1) : '', txt: label(it) }));
+    const total = ents.reduce((s,e) => s + tw(e.txt) + (e.num?NUMW:0), 0) + GAP*(ents.length-1);
+    const want = p.lines[k] - 6 - 0.8*LH;
+    let top = Math.max(want, lastBottom + 3), edge, avail, oneLine, tries = 0;
+    for (;;){
+      const h = (multi && total > 0 ? Math.max(1, ents.length) : 1) * LH;
+      edge = right(top, top + h); avail = p.side === 'L' ? edge - 22 : p.w - edge - 22;
+      if (avail >= MINW || tries > 6) break;
+      top = p.lines[Math.min(p.lines.length - 1, k + 1 + tries)] - 6 - 0.8*LH; top = Math.max(top, lastBottom + 3); tries++;
+    }
+    avail = Math.max(avail, 120);
+    // Inhaltsspalte weiter rechts: Sprachnotiz schmaler umbrechen statt zu überlappen
+    const hh = (multi ? ents.length : 1) * LH;
+    if (p.side !== 'L' && occ && occ.some(([a, b]) => a < top + hh + LH && b > top)){ const ac = CX - 14 - (edge + 16); if (ac >= 90) avail = Math.min(avail, ac); }
+    if (top - want > LH * 0.6){ const s = g[g.length-1].segs[0]; leaders.push({ x1: s[1] + 4, y1: s[2], x2: p.side === 'L' ? edge - 12 : edge + 12, y2: top + 0.5*LH, ids: g.map(x => x.id) }); }
+    oneLine = !multi && tw(ents[0].txt) <= avail || multi && total <= avail;
+    if (oneLine){
+      let x = p.side === 'L' ? edge - 16 - total : edge + 16;
+      ents.forEach(e => { notes[e.it.id] = [{ x, y: top + 0.8*LH, txt:e.txt, num:e.num }]; x += tw(e.txt) + (e.num?NUMW:0) + GAP; });
+      lastBottom = top + LH;
+    } else {
+      ents.forEach(e => {
+        wrap(e.txt, avail - NUMW).forEach((ln, li) => {
+          const w = tw(ln) + (e.num?NUMW:0), x = p.side === 'L' ? edge - 16 - w : edge + 16;
+          (notes[e.it.id] = notes[e.it.id] || []).push({ x, y: top + (li+0.8)*LH, txt:ln, num: li===0 ? e.num : '', indent: li>0 && e.num ? NUMW : 0 });
+          lastBottom = top + (li+1)*LH;
+        });
+        top = lastBottom + 3;
+      });
+    }
+    ents.forEach(e => nums[e.it.id] = e.num);
+  });
+  return { notes, nums, leaders };
+}
+// Lücken-Markierung (fehlendes/überflüssiges Zeichen, Einfügung): kurzer Strich mit Haken in der Lücke
+function gapPath(s){ const x0 = s[0], x1 = s[1], y = s[2]; return `M${x0} ${y-9} L${x0} ${y} L${x1} ${y} L${x1} ${y-9}`; }
+function drawMarks(){
+  const showRej = $('#showRej').checked, all = items();
+  codeData().pages.forEach((p, pi) => {
+    const svg = document.querySelector(`.page[data-i="${pi}"] svg`); if (!svg) return;
+    const vis_ = all.filter(it => it.page === pi && (it.status !== 'rej' || showRej) && vis(it));
+    const inh = vis_.filter(isI), its = vis_.filter(i => !isI(i));
+    const IL = inhaltLayout(p, inh);
+    const { notes, nums, leaders } = layout(p, its, IL.occ);
+    let html = leaders.map(l => `<line class="lead" x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('');
+    its.forEach(it => {
+      const cls = 'mk ' + it.status + (it.status==='open' && it.conf==='unsicher' ? ' uns' : '') + (cur.sel===it.id ? ' selected' : '');
+      let g = `<g class="${cls}" data-id="${it.id}">`;
+      const ns = notes[it.id] || [], num = nums[it.id];
+      it.segs.forEach(s => { g += `<rect class="sel" x="${s[0]-4}" y="${s[2]-34}" width="${s[1]-s[0]+8}" height="42" rx="4"/>`; });
+      ns.forEach(n => { const w = tw(n.txt) + (n.num?NUMW:0) + (n.indent||0); g += `<rect class="sel" x="${n.x-4}" y="${n.y-17}" width="${w+8}" height="${LH+2}" rx="4"/>`; });
+      it.segs.forEach((s, j) => {
+        g += (s[4] === 'gap' ? `<path class="u" d="${gapPath(s)}"/>` : `<line class="u" x1="${s[0]}" y1="${s[2]}" x2="${s[1]}" y2="${s[2]}"/>`) + `<line class="hit" x1="${s[0]}" y1="${s[2]-12}" x2="${s[1]}" y2="${s[2]-12}"/>`;
+        if (num && j===0) g += `<text class="num" x="${s[1]+3}" y="${s[2]-3}">${num}</text>`;
+      });
+      ns.forEach(n => {
+        if (n.num) g += `<text class="num" x="${n.x}" y="${n.y-4}">${n.num}</text>`;
+        g += `<text x="${n.x + (n.num?NUMW:0) + (n.indent||0)}" y="${n.y}">${esc(n.txt)}</text>`;
+      });
+      html += g + '</g>';
+    });
+    const cls = it => 'mk ' + it.status + (cur.sel===it.id ? ' selected' : '');
+    IL.haken.forEach(h => { html += `<g class="${cls(h.it)}" data-id="${h.it.id}"><rect class="sel" x="${h.x-14}" y="${h.y-30}" width="${h.half?50:36}" height="42" rx="4"/>
+      <path class="hk" d="M${h.x} ${h.y-8} l6 8 l14 -22"/>${h.half ? `<text class="par" x="${h.x-10}" y="${h.y+1}">(</text><text class="par" x="${h.x+21}" y="${h.y+1}">)</text>` : ''}
+      <rect class="hitbox" x="${h.x-10}" y="${h.y-28}" width="40" height="34"/></g>`; });
+    IL.rand.forEach(r => { html += `<g class="${cls(r.it)}" data-id="${r.it.id}"><rect class="sel" x="${r.bx-8}" y="${r.y0-4}" width="${r.w+26}" height="${Math.max(r.y1 - r.y0, r.L.length*LH) + 8}" rx="4"/>
+      <line class="bar" x1="${r.bx}" y1="${r.y0}" x2="${r.bx}" y2="${r.y1}"/>${r.L.map(l => `<text x="${l.x}" y="${l.y}">${esc(l.txt)}</text>`).join('')}
+      <rect class="hitbox" x="${r.bx-8}" y="${r.y0}" width="${r.w+26}" height="${Math.max(r.y1 - r.y0, r.L.length*LH)}"/></g>`; });
+    svg.innerHTML = inkSvg(pi) + html + '<line id="tmp" x1="0" y1="0" x2="0" y2="0" style="display:none"/><path id="tmpInk" class="ink" d=""/>';
+  });
+  renderPop();
+}
+function wrap(t, w){ const ws = t.split(' '), out = []; let c = '';
+  ws.forEach(x => { const n = c ? c + ' ' + x : x; if (tw(n) <= w || !c) c = n; else { out.push(c); c = x; } }); out.push(c); return out; }
+
+// ---------- Kopf ----------
+function renderCodes(){
+  $('#ktitle').textContent = D.klausur.titel + ' · ' + D.klausur.datum;
+  const st = D.codes.map(c => { const its = items(c.code).filter(i => i.src==='claude'); return { c: c.code, n: its.length, d: its.filter(i => i.status!=='open').length }; });
+  const me = st.find(x => x.c === cur.code), i = D.codes.findIndex(c => c.code === cur.code);
+  const fertig = st.filter(x => x.d === x.n).length;
+  $('#codes').innerHTML = `<button class="nav" data-step="-1" ${i <= 0 ? 'disabled' : ''} title="Vorheriger Code">‹</button>
+    <div class="cbox"><select id="codeSel">${st.map(x => `<option value="${x.c}" ${x.c===cur.code?'selected':''}>Code ${esc(x.c)}  ·  ${x.d} / ${x.n} geprüft${x.d===x.n?'  ✓':''}</option>`).join('')}</select>
+    <span class="bar"><i style="width:${me.n ? 100*me.d/me.n : 0}%"></i></span><small>${fertig} von ${st.length} Klausuren fertig geprüft</small></div>
+    <button class="nav" data-step="1" ${i >= D.codes.length - 1 ? 'disabled' : ''} title="Nächster Code">›</button>`;
+}
+function gotoCode(code){ cur.code = code; cur.sel = null; renderPages(); refresh(); renderEH(); if (cur.tab === 'fehlerbild') renderFB(); }
+// ---------- Prüfen ----------
+function renderEditor(){
+  const it = items().find(i => i.id === cur.sel), ed = $('#editor');
+  if (!it){ ed.innerHTML = `<div class="card"><h3>Nichts ausgewählt</h3><div class="note">Klicke eine Anstreichung im Scan oder in der Liste an. Schnell geht es mit der Tastatur: <kbd>N</kbd> nächster offener Vorschlag, <kbd>↵</kbd> annehmen, <kbd>X</kbd> verwerfen, <kbd>←</kbd>/<kbd>→</kbd> blättern, <kbd>E</kbd> eigene Anstreichung.</div><div class="row"><button class="btn pri" id="goNext">Ersten offenen Vorschlag zeigen</button></div></div>`;
+    const b = $('#goNext'); if (b) b.onclick = () => nextOpen(); return; }
+  const all = items(), idx = all.indexOf(all.find(i => i.id===it.id));
+  const st = { open:'offen', acc:'angenommen', rej:'verworfen' }[it.status];
+  if (isI(it)) return renderEditorInhalt(it, idx, all, st);
+  const changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr);
+  ed.innerHTML = `<div class="card">
+    <h3>${it.src==='rob' ? 'Eigene Anstreichung' : 'Vorschlag'} ${idx+1} von ${all.length}</h3>
+    <div class="meta">Blatt ${it.page+1}, Zeile ${it.line}
+      <span class="badge ${it.src==='rob'?'r':'c'}">${it.src==='rob'?'von dir':'Claude'}</span>
+      ${it.src==='claude' ? `<span class="badge ${it.conf==='ermessen'?'e':it.conf==='unsicher'?'u':''}">${it.conf==='unsicher'?'Lesung unsicher':it.conf==='ermessen'?'Ermessensfrage':'sicher'}</span>` : ''}
+      <span class="badge">${st}${changed?', geändert':''}</span></div>
+    ${it.src==='claude' && changed ? `<div class="note">Ursprünglich: ${esc(it.orig.sign + (it.orig.corr?' ('+it.orig.corr+')':''))}</div>` : ''}
+    <label class="f">Korrekturzeichen</label>
+    <div class="signs">${SIGNS.map(s => `<button data-s="${esc(s)}" class="${s===it.sign?'on':''}">${esc(s)}</button>`).join('')}</div>
+    <label class="f">Markierung</label>
+    <div class="signs"><button data-g="0" class="${isGap(it)?'':'on'}">Unterstreichung</button><button data-g="1" class="${isGap(it)?'on':''}">Lücke (fehlendes Zeichen / Einfügung)</button></div>
+    <label class="f">Positivkorrektur</label>
+    <input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. effects  ·  Streichung: -">
+    <label class="f">Fehlermuster (für Förderblatt und Kursstatistik)</label>
+    <select id="muster"><option value="">–</option>${Object.entries(D.muster).map(([k,v]) => `<option value="${k}" ${k===it.muster?'selected':''}>${esc(v)}</option>`).join('')}</select>
+    <div class="row">
+      <button class="btn pri" id="acc">Annehmen<small>↵</small></button>
+      ${it.src==='claude' ? `<button class="btn neg" id="rej">Verwerfen<small>X</small></button><button class="btn" id="reset">Zurücksetzen</button>` : `<button class="btn neg" id="del">Löschen</button>`}
+    </div>
+    <div class="row"><button class="btn" id="prev">← Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
+  </div>`;
+  ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
+  ed.querySelectorAll('.signs button[data-g]').forEach(b => b.onclick = () => setGap(it, b.dataset.g === '1'));
+  $('#corr').oninput = e => edit(it, { corr:e.target.value }, true);
+  $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } };
+  $('#muster').onchange = e => edit(it, { muster:e.target.value });
+  $('#acc').onclick = () => decide(it.id, 'acc');
+  if ($('#rej')) $('#rej').onclick = () => decide(it.id, 'rej');
+  if ($('#reset')) $('#reset').onclick = () => { log(it.id,'zurückgesetzt'); delete cs().dec[it.id]; refresh(); };
+  if ($('#del')) $('#del').onclick = () => { log(it.id,'gelöscht', snap(it)); cs().own = cs().own.filter(o => o.id!==it.id); cur.sel=null; refresh(); };
+  $('#prev').onclick = () => step(-1); $('#nxt').onclick = () => nextOpen();
+}
+const snap = it => isI(it) ? ({ sign:it.sign, corr:it.corr, aspect:it.aspect }) : ({ sign:it.sign, corr:it.corr, muster:it.muster });
+function aspectOptions(sel){
+  return '<option value="">– kein EH-Aspekt –</option>' + D.eh.map(t => t.krit.filter(k => k.aspekte).map(k =>
+    `<optgroup label="${esc(t.teil)}: ${esc(k.t)}">${k.aspekte.map(a => `<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.t)}</option>`).join('')}</optgroup>`).join('')).join('');
+}
+function renderEditorInhalt(it, idx, all, st){
+  const ed = $('#editor'), changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr || it.aspect!==it.orig.aspect);
+  ed.innerHTML = `<div class="card">
+    <h3>${it.src==='rob' ? 'Eigene Inhaltsanmerkung' : 'Inhalt – Vorschlag'} ${idx+1} von ${all.length}</h3>
+    <div class="meta">Blatt ${it.page+1}, ${it.kind === 'rand' ? `Zeile ${it.lines[0]}${it.lines[1] !== it.lines[0] ? '–' + it.lines[1] : ''}` : `Zeile ${it.line}`}
+      <span class="badge i">Inhalt</span><span class="badge ${it.src==='rob'?'r':'c'}">${it.src==='rob'?'von dir':'Claude'}</span>
+      <span class="badge">${st}${changed?', geändert':''}</span></div>
+    ${it.src==='claude' && changed ? `<div class="note">Ursprünglich: ${esc(labelI(it.orig))}</div>` : ''}
+    <label class="f">${it.kind === 'haken' ? 'Haken im Text' : 'Randanmerkung'}</label>
+    <div class="signs">${ISIGNS[it.kind].map(s => `<button data-s="${esc(s)}" class="${s===it.sign?'on':''}">${esc(s)}</button>`).join('')}</div>
+    ${it.kind === 'rand' ? `<label class="f">Kurzkommentar (optional)</label><input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. which function?">` : ''}
+    <label class="f">Aspekt im Erwartungshorizont</label>
+    <select id="aspect">${aspectOptions(it.aspect)}</select>
+    <div class="row">
+      <button class="btn pri" id="acc">Annehmen<small>↵</small></button>
+      ${it.src==='claude' ? `<button class="btn neg" id="rej">Verwerfen<small>X</small></button><button class="btn" id="reset">Zurücksetzen</button>` : `<button class="btn neg" id="del">Löschen</button>`}
+    </div>
+    <div class="row"><button class="btn" id="prev">← Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
+  </div>`;
+  ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
+  if ($('#corr')){ $('#corr').oninput = e => edit(it, { corr:e.target.value }, true); $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } }; }
+  $('#aspect').onchange = e => edit(it, { aspect:e.target.value });
+  $('#acc').onclick = () => decide(it.id, 'acc');
+  if ($('#rej')) $('#rej').onclick = () => decide(it.id, 'rej');
+  if ($('#reset')) $('#reset').onclick = () => { log(it.id,'zurückgesetzt'); delete cs().dec[it.id]; refresh(); };
+  if ($('#del')) $('#del').onclick = () => { log(it.id,'gelöscht', snap(it)); cs().own = cs().own.filter(o => o.id!==it.id); cur.sel=null; refresh(); };
+  $('#prev').onclick = () => step(-1); $('#nxt').onclick = () => nextOpen();
+}
+const isGap = it => it.segs.some(s => s[4] === 'gap');
+function toGap(s){ return [s[1] - 8, s[1] + 18, s[2], s[3], 'gap']; }
+function setGap(it, on){
+  if (it.src === 'rob'){ const o = cs().own.find(x => x.id === it.id); o.segs = on ? o.segs.slice(-1).map(toGap) : o.segs.map(s => s[4] === 'gap' ? [s[0] - 30, s[0] + 8, s[2], s[3]] : s); }
+  else { const d = cs().dec[it.id] = cs().dec[it.id] || { status:'open' }; const origGap = it.orig.segs.some(s => s[4] === 'gap');
+    if (on === origGap) delete d.gap; else d.gap = on; }
+  save(); drawMarks(); renderEditor();
+}
+function edit(it, ch, quiet){
+  if (it.src === 'rob'){ Object.assign(cs().own.find(o => o.id===it.id), ch); }
+  else { const d = cs().dec[it.id] = cs().dec[it.id] || { status:'open' }; Object.assign(d, ch); }
+  save(); drawMarks(); renderList(); if (!quiet) renderEditor();
+}
+function decide(id, status){
+  const it = items().find(i => i.id===id); if (!it) return;
+  if (it.src==='claude'){
+    const d = cs().dec[id] = cs().dec[id] || {}; d.status = status;
+    const changed = it.sign!==it.orig.sign || it.corr!==it.orig.corr || (isI(it) && it.aspect!==it.orig.aspect);
+    log(id, status==='acc' ? (changed?'geändert':'angenommen') : 'verworfen', snap(it.orig), status==='acc'?snap(it):null);
+  }
+  save(); nextOpen(true);
+}
+function nextOpen(fromDecision){
+  const all = items(), i0 = all.findIndex(i => i.id===cur.sel);
+  const nx = all.slice(i0+1).concat(all.slice(0, Math.max(i0,0))).find(i => i.status==='open' && vis(i));
+  cur.sel = nx ? nx.id : (fromDecision ? cur.sel : null); refresh(); if (nx) scrollTo(nx.id);
+}
+function step(d){ const all = items(), i = all.findIndex(x => x.id===cur.sel); const n = all[Math.min(all.length-1, Math.max(0, i + d))]; if (n){ cur.sel=n.id; refresh(); scrollTo(n.id); } }
+function scrollTo(id){ const el = document.querySelector(`.mk[data-id="${id}"] .u, .mk[data-id="${id}"] .hk, .mk[data-id="${id}"] .bar`); if (!el) return;
+  const r = el.getBoundingClientRect(), v = $('#viewer'), vr = v.getBoundingClientRect();
+  if (r.top < vr.top + 80 || r.bottom > vr.bottom - 80) v.scrollBy({ top: r.top - vr.top - vr.height/3, behavior:'smooth' }); }
+
+function renderList(){
+  const F = { alle:'Alle', open:'Offen', sprache:'Sprache', inhalt:'Inhalt', check:'Ermessen / unsicher', rob:'Eigene', rej:'Verworfen' };
+  if (document.body.classList.contains('noinhalt')){ delete F.sprache; delete F.inhalt; }
+  $('#filters').innerHTML = Object.entries(F).map(([k,v]) => `<button data-f="${k}" class="${cur.filter===k?'on':''}">${v}</button>`).join('');
+  const all = items().filter(i => cur.filter==='alle' || (cur.filter==='open' && i.status==='open') || (cur.filter==='check' && i.conf!=='sicher')
+     || (cur.filter==='rob' && i.src==='rob') || (cur.filter==='rej' && i.status==='rej') || (cur.filter==='sprache' && !isI(i)) || (cur.filter==='inhalt' && isI(i)));
+  const icon = it => it.status==='acc' ? '<span style="color:var(--ok)">✓</span>' : it.status==='rej' ? '<span style="color:var(--grey)">✗</span>' : '<span style="color:var(--red)">•</span>';
+  $('#list').innerHTML = all.length ? all.map(it => `<div class="li ${cur.sel===it.id?'on':''}" data-id="${it.id}"><span class="st">${icon(it)}</span><span class="pos">B${it.page+1} · Z${it.line}</span><span>${esc(anyLabel(it))}</span>
+     <span>${isI(it)?'<span class="badge i">Inhalt</span> ':''}${it.src==='rob'?'<span class="badge r">eigene</span>':it.conf==='ermessen'?'<span class="badge e">Ermessen</span>':it.conf==='unsicher'?'<span class="badge u">unsicher</span>':''}</span></div>`).join('')
+     : '<p class="empty">Keine Einträge in diesem Filter.</p>';
+}
+
+// ---------- Bewertung ----------
+function counts(){ const c = {}; items().filter(i => final(i) && !isI(i)).forEach(i => c[i.sign] = (c[i.sign]||0) + 1); return c; }
+function renderEH(){
+  const pts = cs().pts, cnt = counts();
+  let h = `<p class="note">Die Punkte vergibst du. Bei den Inhaltskriterien siehst du, welche EH-Aspekte gefunden wurden (Klick springt zur Stelle), bei der Sprachrichtigkeit die Zahl der Anstreichungen. Beides sind Hinweise, keine Punktvorschläge.</p>`;
+  D.eh.forEach((t, ti) => {
+    h += `<h4><span>${esc(t.teil)}</span><span id="ts${ti}"></span></h4>`;
+    t.krit.forEach(k => {
+      h += `<div class="k"><span>${esc(k.t)}${k.bonus?' <span class="badge">Bonus</span>':''}</span><input type="number" min="0" max="${k.max}" step="0.5" data-k="${k.id}" value="${pts[k.id] ?? ''}"><span>/ ${k.max}</span>`;
+      if (k.zeichen) h += `<div class="hint">Angestrichen: ${k.zeichen.map(z => `${esc(z)} ${cnt[z]||0}`).join(' · ')}</div>`;
+      if (k.aspekte){ const A = aspectStatus(), rows = k.aspekte.map(a => ({ a, s: A[a.id] }));
+        const full = rows.filter(r => r.s && r.s.sign === '✓').length, half = rows.filter(r => r.s && r.s.sign === '(✓)').length;
+        h += `<div class="asp"><div class="asum">${k.soll ? `${full} ✓${half ? ` · ${half} (✓)` : ''} gefunden – gefordert: ${k.soll}` : `Aspekte: ${full} ✓${half ? ` · ${half} (✓)` : ''} von ${rows.length}`}</div>` +
+          rows.filter(r => r.s || !k.soll).map(r => `<div class="ar ${r.s ? (r.s.status === 'acc' ? 'ok' : 'vo') : 'no'}" ${r.s ? `data-jump="${r.s.id}"` : ''}>
+            <b>${r.s ? r.s.sign : '–'}</b><span>${esc(r.a.t)}${r.s && r.s.status !== 'acc' ? ' <i>(Vorschlag)</i>' : ''}${!r.s ? ' <i>nicht gefunden</i>' : ''}</span></div>`).join('') + `</div>`; }
+      h += `</div>`;
+    });
+  });
+  h += `<label class="f" style="margin-top:14px">Kommentar für die Schülerin / den Schüler</label><textarea id="komm">${esc(cs().kommentar||'')}</textarea>`;
+  h += `<div class="sum"><div>Inhalt<b id="sI">–</b></div><div>Sprache<b id="sS">–</b></div><div>Gesamt<b id="sG">–</b></div><div>Note<b id="sN">–</b></div></div>`;
+  $('#pane-bewertung').innerHTML = h;
+  $('#pane-bewertung').querySelectorAll('input[data-k]').forEach(inp => inp.oninput = () => {
+    const v = inp.value === '' ? null : Number(inp.value), max = Number(inp.max);
+    inp.classList.toggle('bad', v !== null && (v < 0 || v > max));
+    if (v === null) delete cs().pts[inp.dataset.k]; else cs().pts[inp.dataset.k] = v;
+    save(); sums();
+  });
+  $('#komm').oninput = e => { cs().kommentar = e.target.value; save(); };
+  $('#pane-bewertung').querySelectorAll('[data-jump]').forEach(el => el.onclick = () => { cur.sel = el.dataset.jump; drawMarks(); renderEditor(); renderList(); scrollTo(cur.sel); });
+  sums();
+}
+function aspectStatus(code){
+  const out = {}, rank = it => (it.status === 'acc' ? 2 : 0) + (it.sign === '✓' ? 1 : 0);
+  items(code).filter(i => isI(i) && i.kind === 'haken' && i.aspect && i.status !== 'rej').forEach(it => {
+    const o = out[it.aspect]; if (!o || rank(it) > o.r) out[it.aspect] = { id: it.id, sign: it.sign, status: it.status, r: rank(it) }; });
+  return out;
+}
+function maxima(){ let I = 0, S_ = 0; D.eh.forEach(t => { if (t.sprache) S_ += t.max; else I += t.max; }); return { I, S: S_ }; }
+function totals(code){
+  const pts = S.codes[code||cur.code].pts; let I = 0, Sp = 0, filled = 0, n = 0;
+  const per = D.eh.map(t => { let s = 0; t.krit.forEach(k => { n++; if (pts[k.id] != null){ filled++; s += Math.min(pts[k.id], k.max); } }); s = Math.min(s, t.max); if (t.sprache) Sp += s; else I += s; return s; });
+  const G = I + Sp, note = D.schluessel.find(([n, min]) => G >= min)[0];
+  return { I, Sp, G, note, per, complete: filled === n - 1 || filled === n };
+}
+function sums(){
+  const T = totals(); D.eh.forEach((t, i) => { const el = $('#ts'+i); if (el) el.textContent = T.per[i] + ' / ' + t.max; });
+  const MX = maxima(); $('#sI').textContent = T.I + '/' + MX.I; $('#sS').textContent = T.Sp + '/' + MX.S; $('#sG').textContent = T.G + '/' + (MX.I + MX.S);
+  $('#sN').textContent = Object.keys(cs().pts).length ? T.note : '–';
+}
+
+// ---------- Fehlerbild ----------
+const POOL = () => D.pool || {};
+const EX = () => { const m = {}; Object.entries(POOL()).forEach(([k, t]) => (t.uebungen || []).forEach(u => m[u.id] = Object.assign({ muster: k }, u))); return m; };
+function musterCounts(code){ const m = {}; items(code).filter(i => i.status !== 'rej').forEach(i => { if (i.muster) m[i.muster] = (m[i.muster]||0) + 1; }); return m; }
+function density(code){ const c = D.codes.find(x => x.code === code), n = items(code).filter(i => i.status !== 'rej' && !isI(i)).length; return c.woerter ? 100 * n / c.woerter : null; }
+function levelFor(code, k){
+  const d = density(code), n = musterCounts(code)[k] || 0;
+  if (d == null) return 'Basis'; if (d >= 8) return 'Basis'; if (d < 4) return 'Vertiefung'; return n >= 4 ? 'Basis' : 'Vertiefung';
+}
+function recommended(code){
+  const m = musterCounts(code), P = POOL();
+  const top = Object.entries(m).filter(([k]) => P[k]).sort((a, b) => ((a[0]==='RS') - (b[0]==='RS')) || (b[1] - a[1])).slice(0, 3).map(([k]) => k);
+  return top.map(k => { const lv = levelFor(code, k); const u = (P[k].uebungen || []).find(x => x.niveau === lv) || P[k].uebungen[0]; return u.id; });
+}
+function selection(code){ const f = S.codes[code || cur.code].foerder, E = EX(); return f.manual ? f.sel.filter(id => E[id]) : recommended(code || cur.code); }
+function setSel(list){ const f = cs().foerder; f.manual = true; f.sel = [...new Set(list)]; save(); renderFB(); }
+function courseTop(){
+  const t = {}; D.codes.forEach(c => Object.entries(musterCounts(c.code)).forEach(([k, n]) => { t[k] = t[k] || { n: 0, sus: 0 }; t[k].n += n; t[k].sus++; }));
+  return Object.entries(t).sort((a, b) => b[1].sus - a[1].sus || b[1].n - a[1].n).slice(0, 5);
+}
+function renderFB(){
+  const fin = items().filter(i => final(i) && !isI(i)), bySign = {};
+  fin.forEach(i => bySign[i.sign] = (bySign[i.sign]||0)+1);
+  const mx = Math.max(1, ...Object.values(bySign)), open = items().filter(i => i.status==='open' && !isI(i)).length;
+  const P = POOL(), mc = musterCounts(cur.code), sel = selection(), reco = recommended(cur.code), f = cs().foerder, d = density(cur.code);
+  const present = Object.keys(mc).filter(k => P[k]).sort((a,b) => mc[b]-mc[a]);
+  const rest = Object.keys(P).filter(k => !present.includes(k));
+  const row = k => `<div class="fr"><span><b>${esc(D.muster[k] || k)}</b><small>${esc(P[k].titel)}</small></span>
+      <span class="chips">${(P[k].uebungen || []).map(u => `<button class="chip ${sel.includes(u.id)?'on':''} ${reco.includes(u.id)?'reco':''}" data-ex="${u.id}" title="${esc(u.auftrag)}">${esc(u.niveau)}</button>`).join('')}</span>
+      <span class="badge">${mc[k] ? mc[k] + '×' : '–'}</span></div>`;
+  const L = S.log.filter(l => l.code===cur.code);
+  const own = cs().own.length, rej = L.filter(l => l.action==='verworfen').length, chg = L.filter(l => l.action==='geändert').length;
+  const ct = courseTop();
+  $('#pane-fehlerbild').innerHTML = `
+   <div class="card"><h3>Förderblatt für Code ${esc(cur.code)}</h3>
+     ${Object.keys(P).length ? `
+     <p class="note">${f.manual ? 'Deine Auswahl.' : 'Vorauswahl: die drei häufigsten Fehlermuster'}${f.manual ? '' : d != null ? ` – Niveau nach Fehlerdichte (${d.toFixed(1)} pro 100 Wörter): ${d >= 8 ? 'Basis' : d < 4 ? 'Vertiefung' : 'Basis bei häufigen, Vertiefung bei seltenen Fehlern'}.` : '.'} Grün umrandet = empfohlen. Klick auf Basis/Vertiefung wählt die Übung an oder ab.</p>
+     <div class="fl">${present.length ? present.map(row).join('') : '<p class="empty">Noch keine Vorschläge mit Fehlermuster.</p>'}</div>
+     <details class="more"><summary>Weitere Übungen aus dem Pool (${rest.length} Muster)</summary><div class="fl">${rest.map(row).join('')}</div></details>
+     <div class="row" style="margin-top:10px">
+       <label class="chk"><input type="checkbox" id="fAktiv" ${f.aktiv?'checked':''}> Förderblatt in den PDF-Export aufnehmen</label>
+       <label class="chk"><input type="checkbox" id="fLoes" ${f.loesung?'checked':''}> Lösungsblatt beilegen</label></div>
+     <div class="row">${f.manual ? '<button class="btn" id="fReset">Empfehlung wiederherstellen</button>' : ''}<button class="btn" id="fOnly">Nur Förderblatt als PDF</button></div>
+     <p class="note">${sel.length} ${sel.length === 1 ? 'Übung' : 'Übungen'} ausgewählt${open ? ` · ${open} Vorschläge noch offen – die Empfehlung kann sich noch ändern` : ''}.</p>`
+     : '<p class="empty">Diese Vorkorrektur enthält keinen Übungspool.</p>'}</div>
+   ${ct.length ? `<div class="card"><h3>Im Kurs häufig (für eine Förderstunde)</h3>${ct.map(([k, v]) => `<div class="hbar"><span>${esc(D.muster[k] || k)}</span><span class="note">${v.sus} von ${D.codes.length} SuS</span><b>${v.n}</b></div>`).join('')}</div>` : ''}
+   <div class="card"><h3>Anstreichungen nach Zeichen</h3>${fin.length ? Object.entries(bySign).sort((a,b)=>b[1]-a[1]).map(([s,n]) => `<div class="hbar"><span>${esc(s)}</span><span class="t"><i style="width:${100*n/mx}%"></i></span><b>${n}</b></div>`).join('') : '<p class="empty">Noch keine angenommenen Anstreichungen.</p>'}</div>
+   <div class="card"><h3>Lernprotokoll für dein Korrekturprofil</h3>
+     <div class="hbar"><span>verworfen</span><span></span><b>${rej}</b></div><div class="hbar"><span>geändert</span><span></span><b>${chg}</b></div><div class="hbar"><span>selbst ergänzt</span><span></span><b>${own}</b></div>
+     <p class="note">Jede Abweichung von meinen Vorschlägen wird mitgeschrieben und mit „Stand sichern“ exportiert. Daraus passe ich nach jeder Klausur deinen Korrekturmaßstab an.</p></div>`;
+  const PN = $('#pane-fehlerbild');
+  PN.querySelectorAll('.chip[data-ex]').forEach(b => b.onclick = () => { const id = b.dataset.ex, cur_ = selection(); setSel(cur_.includes(id) ? cur_.filter(x => x !== id) : [...cur_, id]); });
+  const r = $('#fReset'); if (r) r.onclick = () => { cs().foerder.manual = false; save(); renderFB(); };
+  const ak = $('#fAktiv'); if (ak) ak.onchange = () => { cs().foerder.aktiv = ak.checked; save(); };
+  const lo = $('#fLoes'); if (lo) lo.onchange = () => { cs().foerder.loesung = lo.checked; save(); };
+  const fo = $('#fOnly'); if (fo) fo.onclick = () => exportFoerder(cur.code);
+  const det = PN.querySelector('details.more'); if (det){ det.open = !!renderFB.moreOpen; det.ontoggle = () => renderFB.moreOpen = det.open; }
+}
+
+// ---------- Förderblatt als Seiten ----------
+function foerderCanvases(code, withKey){
+  const E = EX(), P = POOL(), sel = selection(code).filter(id => E[id]); if (!sel.length) return [];
+  const order = []; sel.forEach(id => { if (!order.includes(E[id].muster)) order.push(E[id].muster); });
+  const W = 1654, H = 2339, u = 200 / 72, ML = 150, MR = W - 150, pages = [];
+  let g, y;
+  const font = (sz, st) => `${st || ''} ${sz * u}px Helvetica, Arial, sans-serif`;
+  const newPage = (title) => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; g = cv.getContext('2d');
+    g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#111'; pages.push(cv); y = 130;
+    g.font = font(8.5); g.fillStyle = '#666'; g.textAlign = 'right'; g.fillText(`${D.klausur.id || ''} · Code ${code}`, MR, 90); g.textAlign = 'left'; g.fillStyle = '#111';
+    if (title){ g.font = font(16, 'bold'); g.fillText(title, ML, y + 20 * u); y += 32 * u; } };
+  const need = h => { if (y + h > H - 130) newPage(); };
+  const rich = (t, x, maxw, sz, st, draw) => {
+    g.font = font(sz, st); const lh = sz * u * 1.4; const toks = [];
+    String(t).split(/(⟦[^⟧]*⟧)/).forEach(part => { const ul = part.startsWith('⟦'); part.replace(/[⟦⟧]/g, '').split(/(\s+)/).forEach(w => { if (w) toks.push({ w, ul }); }); });
+    let cx = x, cy = 0, lines = 1;
+    toks.forEach(tk => { const ww = g.measureText(tk.w).width;
+      if (cx + ww > x + maxw && !/^\s+$/.test(tk.w) && cx > x){ cx = x; cy += lh; lines++; }
+      if (/^\s+$/.test(tk.w) && cx === x) return;
+      if (draw){ g.fillText(tk.w, cx, y + cy + sz * u); if (tk.ul && !/^\s+$/.test(tk.w)) g.fillRect(cx, y + cy + sz * u + 4, ww, 2.5); }
+      cx += ww; });
+    return lines * lh;
+  };
+  const para = (t, x, maxw, sz, st, gapAfter) => { const h = rich(t, x, maxw, sz, st, false); need(h); rich(t, x, maxw, sz, st, true); y += h + (gapAfter || 0); };
+  const answerLine = () => { need(46); g.strokeStyle = '#9aa3ad'; g.lineWidth = 2; g.beginPath(); g.moveTo(ML + 60, y + 38); g.lineTo(MR, y + 38); g.stroke(); y += 52; };
+  const LV = { Basis: 'Basic practice', Vertiefung: 'Further practice' };
+  newPage('Förderblatt – Exam #1');
+  para('These exercises focus on the typical mistakes in your exam. Read the rule first, then do the exercises. Check your answers with the answer key afterwards.', ML, MR - ML, 10, '', 24);
+  order.forEach((k, ti) => {
+    const T = P[k]; if (!T) return;
+    need(200); y += 10;
+    g.fillStyle = '#8f1010'; para(`Task ${ti + 1}: ${T.titel}`, ML, MR - ML, 13, 'bold', 12); g.fillStyle = '#111';
+    const rh = rich('Rule: ' + T.regel, ML + 24, MR - ML - 48, 9.5, '', false) + 30;
+    need(rh); g.fillStyle = '#f1f3f5'; g.fillRect(ML, y, MR - ML, rh); g.fillStyle = '#111'; y += 15; rich('Rule: ' + T.regel, ML + 24, MR - ML - 48, 9.5, '', true); y += rh - 15 + 18;
+    sel.filter(id => E[id].muster === k).forEach(id => { const ex = E[id];
+      para(`${LV[ex.niveau] || ex.niveau} – ${ex.auftrag}`, ML, MR - ML, 10.5, 'bold', 10);
+      ex.items.forEach((it, i) => { para(`${i + 1}.  ${it[0]}`, ML + 20, MR - ML - 20, 10, '', 4); answerLine(); });
+      y += 8; });
+    y += 12;
+  });
+  if (withKey){
+    newPage('Answer key – Förderblatt');
+    order.forEach((k, ti) => { const T = P[k]; if (!T) return;
+      need(120); g.fillStyle = '#8f1010'; para(`Task ${ti + 1}: ${T.titel}`, ML, MR - ML, 12, 'bold', 8); g.fillStyle = '#111';
+      sel.filter(id => E[id].muster === k).forEach(id => { const ex = E[id];
+        para(LV[ex.niveau] || ex.niveau, ML, MR - ML, 10, 'bold', 4);
+        ex.items.forEach((it, i) => para(`${i + 1}.  ${it[1]}`, ML + 20, MR - ML - 20, 9.5, '', 6)); y += 6; });
+      y += 14; });
+  }
+  return pages;
+}
+async function exportFoerder(code){
+  toast('Förderblatt wird erstellt …', 0);
+  try { const f = S.codes[code].foerder, pages = [];
+    for (const cv of foerderCanvases(code, f.loesung)) pages.push(await toPage(cv));
+    if (!pages.length) return toast('Keine Übungen ausgewählt.');
+    download(makePdf(pages), `${D.klausur.id || 'Klausur'}_Code-${code}_Foerderblatt.pdf`);
+  } catch(e){ toast('Fehler beim Förderblatt: ' + e.message, 10000); console.error(e); }
+}
+
+// ---------- Eigene Anstreichung, Freihand, Radierer (Maus, Finger, Stift) ----------
+let drag = null, inkN = 0;
+const INKW = 3, VW = $('#viewer'), undo = [];
+function svgPt(svg, e){ const r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal; return { x:(e.clientX-r.left)*vb.width/r.width, y:(e.clientY-r.top)*vb.height/r.height }; }
+function lineAt(L, y){ let k = 1; for (let i = 1; i < L.length; i++) if (y <= L[i] + 12){ k = i; break; } else k = i; return k; }
+const r1 = x => Math.round(x * 10) / 10;
+function inkD(pts){
+  if (pts.length === 1) return `M${pts[0][0]} ${pts[0][1]} l0.1 0`;
+  let d = `M${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < pts.length - 1; i++){ const a = pts[i], b = pts[i+1]; d += ` Q${a[0]} ${a[1]} ${r1((a[0]+b[0])/2)} ${r1((a[1]+b[1])/2)}`; }
+  const z = pts[pts.length-1]; return d + ` L${z[0]} ${z[1]}`;
+}
+function inkSvg(pi){ return cs().ink.filter(s => s.page === pi).map(s => `<path class="ink" d="${inkD(s.pts)}"/>`).join(''); }
+function updTools(){
+  if (!cur) return; const m = cur.own || '';
+  document.querySelectorAll('#tools [data-m]').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  $('#undoBtn').disabled = !undo.length;
+  VW.classList.toggle('fdraw', !!cur.own && $('#finger').checked); VW.classList.toggle('erase', cur.own === 'erase');
+}
+function undoInk(){ const u = undo.pop(); if (!u || !S.codes[u.code]) return updTools();
+  const st = S.codes[u.code];
+  if (u.op === 'add') st.ink = st.ink.filter(x => x.id !== u.s.id); else st.ink.push(u.s);
+  save(); drawMarks(); updTools(); }
+function eraseAt(pi, p){
+  const near = pts => pts.some((q, i) => { const r = pts[i+1] || q, dx = r[0]-q[0], dy = r[1]-q[1], l = dx*dx + dy*dy;
+    const t = l ? Math.max(0, Math.min(1, ((p.x-q[0])*dx + (p.y-q[1])*dy) / l)) : 0; return (q[0]+t*dx-p.x)**2 + (q[1]+t*dy-p.y)**2 < 256; });
+  const ink = cs().ink, hit = ink.filter(x => x.page === pi && near(x.pts));
+  if (!hit.length) return; hit.forEach(x => undo.push({ op:'del', code:cur.code, s:x }));
+  cs().ink = ink.filter(x => !hit.includes(x)); save(); drawMarks(); updTools();
+}
+VW.addEventListener('pointerdown', e => {
+  const svg = e.target.closest('svg.ov'); if (!cur || !svg || !cur.own || drag) return;
+  if (e.pointerType === 'touch' && !$('#finger').checked) return;        // Finger scrollt
+  if (e.pointerType === 'mouse' && e.button !== 0) return;
+  e.preventDefault(); try { svg.setPointerCapture(e.pointerId); } catch(_){}
+  const p = svgPt(svg, e), pi = Number(svg.parentNode.dataset.i);
+  drag = { svg, x0:p.x, y:p.y, pi, mode:cur.own, pid:e.pointerId, ptype:e.pointerType, pts:[[r1(p.x), r1(p.y)]] };
+  if (drag.mode === 'erase') eraseAt(pi, p);
+});
+VW.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.pid) return; e.preventDefault();
+  const ce = e.getCoalescedEvents ? e.getCoalescedEvents() : [], evs = ce.length ? ce : [e];
+  const p = svgPt(drag.svg, e);
+  if (drag.mode === 'erase') return eraseAt(drag.pi, p);
+  evs.forEach(ev => { const q = svgPt(drag.svg, ev), l = drag.pts[drag.pts.length-1]; if ((q.x-l[0])**2 + (q.y-l[1])**2 > 4) drag.pts.push([r1(q.x), r1(q.y)]); });
+  if (drag.mode === 'ink'){ drag.svg.querySelector('#tmpInk').setAttribute('d', inkD(drag.pts)); return; }
+  if (drag.mode === 'haken') return;
+  const t = drag.svg.querySelector('#tmp'); t.style.display = '';
+  if (drag.mode === 'rand'){ t.setAttribute('x1', CX); t.setAttribute('x2', CX); t.setAttribute('y1', drag.y); t.setAttribute('y2', p.y); }
+  else { t.setAttribute('x1', drag.x0); t.setAttribute('x2', p.x); t.setAttribute('y1', drag.y); t.setAttribute('y2', drag.y); }
+});
+function endDraw(e, cancel){
+  if (!drag || e.pointerId !== drag.pid) return;
+  const d = drag; drag = null; const p = svgPt(d.svg, e);
+  d.svg.querySelector('#tmp').style.display = 'none';
+  if (cancel){ drawMarks(); return; }
+  if (d.mode === 'erase') return;
+  if (d.mode === 'ink'){
+    const x = { id: cur.code + '-I' + Date.now().toString(36) + (++inkN), page: d.pi, pts: d.pts };
+    cs().ink.push(x); undo.push({ op:'add', code:cur.code, s:x }); save(); drawMarks(); updTools(); return;
+  }
+  if (d.mode === 'haken' || d.mode === 'rand'){
+    const L = codeData().pages[d.pi].lines, id = cur.code + '-R' + Date.now().toString(36);
+    if (d.mode === 'haken'){ const k = lineAt(L, d.y), y = L[k] - 14, x = Math.round(d.x0);
+      cs().own.push({ id, layer:'inhalt', kind:'haken', page:d.pi, line:k, x, y, segs:[[x, x, y, k]], sign:'✓', corr:'', aspect:'' }); }
+    else { const k0 = lineAt(L, Math.min(d.y, p.y)), k1 = lineAt(L, Math.max(d.y, p.y)), y0 = L[k0] - 46, y1 = L[k1] + 4;
+      cs().own.push({ id, layer:'inhalt', kind:'rand', page:d.pi, line:k0, lines:[k0, k1], y0, y1, segs:[[CX, CX, y0, k0]], sign:'too vague', corr:'', aspect:'' }); }
+    log(id, 'ergänzt'); cur.sel = id; save(); refresh(); return;
+  }
+  // Unterstreichen: Strich (auch wellig) wird zur geraden Unterstreichung auf der Zeile, in der er überwiegend liegt
+  const xs = d.pts.map(q => q[0]).concat(p.x), x0 = Math.min(...xs), x1 = Math.max(...xs);
+  if (x1 - x0 < 10){ // nur getippt: Anstreichung unter dem Stift auswählen
+    const el = document.elementFromPoint(e.clientX, e.clientY), g = el && el.closest('.mk');
+    if (g){ cur.sel = g.dataset.id; refresh(); } return; }
+  const ys = d.pts.map(q => q[1]).sort((a, b) => a - b), L = codeData().pages[d.pi].lines, k = lineAt(L, ys[ys.length >> 1]);
+  const id = cur.code + '-R' + Date.now().toString(36);
+  cs().own.push({ id, layer:'sprache', page:d.pi, line:k, segs:[[Math.round(x0), Math.round(x1), L[k]+5, k]], sign:'', corr:'', muster:'' });
+  log(id, 'ergänzt'); cur.sel = id; save(); refresh();
+}
+VW.addEventListener('pointerup', e => endDraw(e));
+VW.addEventListener('pointercancel', e => endDraw(e, true));
+// iPad: Stift zeichnet statt zu scrollen, Finger scrollt (außer „Finger zeichnet“), zwei Finger zoomen
+let pinch = null;
+function zoomTo(z, mx, my){
+  z = Math.max(40, Math.min(200, Math.round(z))); const zi = $('#zoom'); if (z === Number(zi.value)) return;
+  const vr = VW.getBoundingClientRect(), ox = mx - vr.left, oy = my - vr.top;
+  const fx = (VW.scrollLeft + ox) / VW.scrollWidth, fy = (VW.scrollTop + oy) / VW.scrollHeight;
+  zi.value = z; applyZoom(); VW.scrollLeft = fx * VW.scrollWidth - ox; VW.scrollTop = fy * VW.scrollHeight - oy; renderPop();
+}
+VW.addEventListener('touchstart', e => {
+  const stylus = [...e.touches].some(t => t.touchType === 'stylus');
+  if (cur && cur.own && e.target.closest('svg.ov') && (stylus || ($('#finger').checked && e.touches.length === 1))){ e.preventDefault(); return; }
+  if (e.touches.length === 2 && !stylus){ const [a, b] = e.touches; pinch = { d: Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY), z: Number($('#zoom').value) }; }
+}, { passive:false });
+VW.addEventListener('touchmove', e => {
+  if (drag){ e.preventDefault(); return; }
+  if (pinch && e.touches.length === 2){ e.preventDefault(); const [a, b] = e.touches;
+    zoomTo(pinch.z * Math.hypot(a.clientX-b.clientX, a.clientY-b.clientY) / pinch.d, (a.clientX+b.clientX)/2, (a.clientY+b.clientY)/2); }
+}, { passive:false });
+VW.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+VW.addEventListener('click', e => {
+  if (!cur || cur.own || e.target.closest('.qpop')) return;
+  const g = e.target.closest('.mk');
+  if (g){ cur.sel = g.dataset.id; refresh(); } else if (e.target.closest('.page') && cur.sel){ cur.sel = null; refresh(); }
+});
+$('#tools').addEventListener('click', e => { const b = e.target.closest('button[data-m]'); if (b && D) setOwn(b.dataset.m || false); });
+$('#undoBtn').onclick = () => undoInk();
+$('#finger').onchange = () => updTools();
+
+// ---------- Schnellmenü an der Anstreichung (Antippen / Klicken) ----------
+const popMore = new Set();
+function renderPop(){
+  document.querySelectorAll('.qpop').forEach(x => { if (!cur || x.dataset.id !== cur.sel || !(x.contains(document.activeElement) && document.activeElement.matches('input'))) x.remove(); });
+  if (!cur || !cur.sel || (cur.own && cur.own !== 'sprache')) return;
+  if (document.querySelector('.qpop')) return;               // wird gerade beschrieben
+  const it = items().find(i => i.id === cur.sel); if (!it || !vis(it)) return;
+  const page = document.querySelector(`.page[data-i="${it.page}"]`); if (!page) return;
+  const own = it.src === 'rob', inh = isI(it), more = !inh && (own || popMore.has(it.id));
+  const st = { open:'offen', acc:'angenommen', rej:'verworfen' }[it.status];
+  const el = document.createElement('div'); el.className = 'qpop'; el.dataset.id = it.id;
+  el.innerHTML = (own ? `<div class="qmeta">Eigene Anstreichung – Zeichen antippen</div>`
+      : `<div class="qlab">${esc(anyLabel(it))}</div><div class="qmeta">${it.conf==='unsicher' ? 'Lesung unsicher · ' : it.conf==='ermessen' ? 'Ermessensfrage · ' : ''}${st}</div>
+         <div class="qrow"><button class="qa" data-q="acc">✓ Annehmen</button><button class="qr" data-q="rej">✗ Verwerfen</button>${inh ? '' : `<button data-q="more">${more ? '▴' : 'Ändern'}</button>`}</div>`)
+    + (more ? `<div class="qrow signs">${SIGNS.map(x => `<button data-s="${esc(x)}" class="${x===it.sign?'on':''}">${esc(x)}</button>`).join('')}</div>
+         <input type="text" class="qcorr" value="${esc(it.corr||'')}" placeholder="Positivkorrektur (optional) · Streichung: -">
+         <div class="qrow"><button data-q="gap" class="${isGap(it)?'on':''}">Lücke</button>${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done">Fertig</button>` : ''}</div>` : '');
+  page.appendChild(el);
+  const P = codeData().pages[it.page], s = it.segs[it.segs.length-1], sc = page.clientWidth / P.w, w = el.offsetWidth, h = el.offsetHeight;
+  let x = s[0] * sc, y = (s[2] + 14) * sc;
+  if (x + w > page.clientWidth - 4) x = Math.max(4, page.clientWidth - w - 4);
+  if (y + h > page.clientHeight - 4) y = Math.max(4, (s[2] - 44) * sc - h);
+  el.style.left = x + 'px'; el.style.top = y + 'px';
+  el.addEventListener('pointerdown', e => e.stopPropagation());
+  el.onclick = e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
+    if (b.dataset.s) return edit(it, { sign: b.dataset.s });
+    const q = b.dataset.q;
+    if (q === 'acc' || q === 'rej') decide(it.id, q);
+    else if (q === 'more'){ popMore.has(it.id) ? popMore.delete(it.id) : popMore.add(it.id); el.remove(); renderPop(); }
+    else if (q === 'gap') setGap(it, !isGap(it));
+    else if (q === 'del'){ log(it.id, 'gelöscht', snap(it)); cs().own = cs().own.filter(o => o.id !== it.id); cur.sel = null; refresh(); }
+    else if (q === 'done'){ cur.sel = null; refresh(); }
+  };
+  const inp = el.querySelector('.qcorr');
+  if (inp){ inp.oninput = () => edit(it, { corr: inp.value }, true);
+    inp.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); inp.blur(); if (own){ cur.sel = null; refresh(); } else decide(it.id, 'acc'); } }; }
+}
+
+// ---------- Allgemeines ----------
+function refresh(){ renderCodes(); drawMarks(); renderEditor(); renderList(); if (cur.tab==='bewertung') sums(); if (cur.tab==='fehlerbild') renderFB(); }
+const OWNTXT = { ink: '✎ Freihand … (Esc)', erase: '⌫ Radierer … (Esc)', sprache: '✎ Sprache: Wort ziehen … (Esc)', haken: '✎ Inhalt: Haken klicken … (Esc)', rand: '✎ Inhalt: Randstrich über Zeilen ziehen … (Esc)' };
+function setOwn(mode){ cur.own = mode || false; updTools(); $('#ownMenu').open = false; $('#ownBtn').classList.toggle('on', !!cur.own); $('#viewer').classList.toggle('own', !!cur.own); $('#ownBtn').textContent = cur.own ? OWNTXT[cur.own] : '✎ Anstreichen ▾';
+  if (cur.own === 'haken' || cur.own === 'rand'){ $('#showI').checked = true; cur.show = { sprache: $('#showS').checked, inhalt: true }; drawMarks(); } }
+$('#codes').onclick = e => { const b = e.target.closest('button.nav'); if (!b || b.disabled) return; const i = D.codes.findIndex(c => c.code === cur.code) + Number(b.dataset.step); if (D.codes[i]) gotoCode(D.codes[i].code); };
+$('#codes').onchange = e => { if (e.target.id === 'codeSel') gotoCode(e.target.value); };
+$('#filters').onclick = e => { const b = e.target.closest('button'); if (b){ cur.filter = b.dataset.f; renderList(); } };
+$('#list').onclick = e => { const r = e.target.closest('.li'); if (r){ cur.sel = r.dataset.id; refresh(); scrollTo(r.dataset.id); } };
+document.querySelector('.tabs').onclick = e => { const b = e.target.closest('button'); if (!b) return; cur.tab = b.dataset.t;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x===b));
+  document.querySelectorAll('.pane').forEach(p => p.classList.toggle('on', p.id==='pane-'+cur.tab));
+  if (cur.tab==='bewertung') renderEH(); if (cur.tab==='fehlerbild') renderFB(); };
+$('#ownMenu').querySelectorAll('[data-own]').forEach(b => b.onclick = () => D && setOwn(b.dataset.own));
+$('#ownBtn').onclick = e => { if (cur && cur.own){ e.preventDefault(); setOwn(false); } };
+$('#showRej').onchange = drawMarks;
+$('#showS').onchange = $('#showI').onchange = () => { cur.show = { sprache: $('#showS').checked, inhalt: $('#showI').checked }; drawMarks(); renderList(); };
+$('#zoom').oninput = () => { applyZoom(); renderPop(); };
+function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.h); if (ms !== 0) toast.h = setTimeout(() => t.style.display = 'none', ms || 6000); }
+function inPreview(){ try { return window.top !== window.self; } catch(e){ return true; } }
+function download(blob, name){
+  try {
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener'; a.style.display = 'none';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 10000);
+    toast(inPreview() ? 'Falls kein Download startet: Die Datei läuft in einer Vorschau. Bitte direkt im Browser öffnen (Chrome, Edge, Firefox oder Safari).' : `„${name}“ wird heruntergeladen.`);
+  } catch(e){ toast('Download nicht möglich: ' + e.message); }
+}
+$('#exportBtn').onclick = () => { $('#standMenu').open = false; if (!D) return toast('Bitte zuerst eine Vorkorrektur-PDF öffnen.');
+  download(new Blob([JSON.stringify({ klausur:D.klausur, stand:S }, null, 1)], { type:'application/json' }),
+           'Korrekturstand_' + (D.klausur.id || 'Klausur') + '_' + new Date().toISOString().slice(0,10) + '.json');
+};
+
+// ---------- PDF-Export (ohne externe Bibliotheken) ----------
+const RED = '#8f1010', PX = 2;            // PX: Ausgabe in doppelter Scanauflösung (~300 dpi)
+const loadImg = src => new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = src; });
+// Leinwand nach dem Umwandeln sofort freigeben (Safari auf dem iPad hat ein enges Limit für Canvas-Speicher)
+async function toPage(cv){ const r = { w: cv.width, h: cv.height, jpeg: await toJpeg(cv) }; cv.width = cv.height = 0; return r; }
+const toJpeg = cv => new Promise(ok => cv.toBlob(b => b.arrayBuffer().then(x => ok(new Uint8Array(x))), 'image/jpeg', 0.84));
+async function pageCanvas(code, pi){
+  const c = D.codes.find(x => x.code === code), p = c.pages[pi];
+  const its = items(code).filter(it => it.page === pi && final(it));
+  const img = await loadImg(p.img), cv = document.createElement('canvas');
+  cv.width = Math.round(p.w * PX); cv.height = Math.round(p.h * PX);
+  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, cv.width, cv.height);
+  g.drawImage(img, 0, 0, cv.width, cv.height); g.scale(PX, PX);
+  g.strokeStyle = RED; g.fillStyle = RED; g.lineWidth = 2.6; g.lineCap = 'round'; g.textBaseline = 'alphabetic';
+  const inh = its.filter(isI), IL = inhaltLayout(p, inh); its.splice(0, its.length, ...its.filter(i => !isI(i)));
+  const { notes, nums, leaders } = layout(p, its, IL.occ);
+  IL.haken.forEach(h => { g.beginPath(); g.moveTo(h.x, h.y - 8); g.lineTo(h.x + 6, h.y); g.lineTo(h.x + 20, h.y - 22); g.stroke();
+    if (h.half){ g.font = '20px Helvetica, Arial, sans-serif'; g.fillText('(', h.x - 10, h.y + 1); g.fillText(')', h.x + 21, h.y + 1); } });
+  IL.rand.forEach(r => { g.beginPath(); g.moveTo(r.bx, r.y0); g.lineTo(r.bx, r.y1); g.stroke(); g.font = FONT; r.L.forEach(l => g.fillText(l.txt, l.x, l.y)); });
+  g.save(); g.lineWidth = 1.2; g.setLineDash([3, 4]); g.globalAlpha = 0.6;
+  leaders.forEach(l => { g.beginPath(); g.moveTo(l.x1, l.y1); g.lineTo(l.x2, l.y2); g.stroke(); }); g.restore();
+  its.forEach(it => {
+    it.segs.forEach((s, j) => { g.beginPath();
+      if (s[4] === 'gap'){ g.moveTo(s[0], s[2]-9); g.lineTo(s[0], s[2]); g.lineTo(s[1], s[2]); g.lineTo(s[1], s[2]-9); } else { g.moveTo(s[0], s[2]); g.lineTo(s[1], s[2]); }
+      g.stroke();
+      if (nums[it.id] && j === 0){ g.font = 'bold 13px Helvetica, Arial, sans-serif'; g.fillText(nums[it.id], s[1] + 3, s[2] - 3); } });
+    (notes[it.id] || []).forEach(n => {
+      if (n.num){ g.font = 'bold 13px Helvetica, Arial, sans-serif'; g.fillText(n.num, n.x, n.y - 4); }
+      g.font = FONT; g.fillText(n.txt, n.x + (n.num ? NUMW : 0) + (n.indent || 0), n.y);
+    });
+  });
+  g.save(); g.setLineDash([]); g.globalAlpha = 1; g.lineWidth = INKW; g.lineCap = 'round'; g.lineJoin = 'round';
+  (S.codes[code].ink || []).filter(s => s.page === pi).forEach(s => g.stroke(new Path2D(inkD(s.pts)))); g.restore();
+  return cv;
+}
+function summaryCanvas(code){
+  const W = 1654, H = 2339, u = 200 / 72, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.fillStyle = '#111';
+  const st = S.codes[code], pts = st.pts, T = totals(code), L = 18 * 72 / 25.4 * u, R = W - L;
+  let y = 22 * 72 / 25.4 * u;
+  const txt = (t, x, sz, bold, align, col) => { g.font = `${bold ? 'bold ' : ''}${sz * u}px Helvetica, Arial, sans-serif`; g.textAlign = align || 'left'; g.fillStyle = col || '#111'; g.fillText(t, x, y); };
+  txt(`Bewertung · Code ${code}`, L, 17, true); y += 22 * u;
+  txt(`${D.klausur.titel} · ${D.klausur.datum}`, L, 10.5, false, 'left', '#444'); y += 26 * u;
+  const rule = c => { g.strokeStyle = c || '#ccc'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(L, y + 6 * u); g.lineTo(R, y + 6 * u); g.stroke(); };
+  D.eh.forEach((t, i) => {
+    txt(t.teil, L, 10.5, true); txt(`${T.per[i]} / ${t.max}`, R, 10.5, true, 'right'); rule('#888'); y += 17 * u;
+    t.krit.forEach(k => { g.font = `${9.5 * u}px Helvetica, Arial, sans-serif`;
+      const lines = wrapCtx(g, k.t + (k.bonus ? ' (Bonus)' : ''), R - L - 90 * u);
+      lines.forEach((ln, li) => { txt(ln, L + 8 * u, 9.5); if (li === lines.length - 1) txt(`${pts[k.id] ?? '–'} / ${k.max}`, R, 9.5, false, 'right'); if (li < lines.length - 1) y += 12.5 * u; });
+      rule(); y += 15 * u; });
+    y += 5 * u;
+  });
+  y += 4 * u; txt('Gesamt', L, 12, true); txt(`${T.G} / ${maxima().I + maxima().S}   ·   Note ${Object.keys(pts).length ? T.note : '–'}`, R, 12, true, 'right'); rule('#111'); y += 26 * u;
+  const cnt = {}; items(code).filter(final).forEach(i => cnt[i.sign] = (cnt[i.sign] || 0) + 1);
+  if (Object.keys(cnt).length){ txt('Sprachliche Anstreichungen: ' + Object.entries(cnt).sort((a,b) => b[1]-a[1]).map(([k,v]) => `${k} ${v}`).join('  ·  '), L, 9.5, false, 'left', '#444'); y += 22 * u; }
+  if (st.kommentar){ txt('Kommentar', L, 11, true); y += 16 * u; g.font = `${10 * u}px Helvetica, Arial, sans-serif`;
+    st.kommentar.split('\n').forEach(par => { wrapCtx(g, par, R - L).forEach(ln => { txt(ln, L, 10); y += 14 * u; }); y += 4 * u; }); }
+  return cv;
+}
+function wrapCtx(g, t, w){ const out = []; let c = ''; String(t).split(' ').forEach(x => { const n = c ? c + ' ' + x : x; if (g.measureText(n).width <= w || !c) c = n; else { out.push(c); c = x; } }); out.push(c); return out; }
+function makePdf(pages){
+  const enc = new TextEncoder(), parts = [], offs = []; let len = 0;
+  const push = x => { const b = typeof x === 'string' ? enc.encode(x) : x; parts.push(b); len += b.length; };
+  const obj = (id, body) => { offs[id] = len; push(`${id} 0 obj\n`); body(); push('\nendobj\n'); };
+  push(new Uint8Array([0x25,0x50,0x44,0x46,0x2D,0x31,0x2E,0x34,0x0A,0x25,0xE2,0xE3,0xCF,0xD3,0x0A]));
+  const n = pages.length;
+  obj(1, () => push('<< /Type /Catalog /Pages 2 0 R >>'));
+  obj(2, () => push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + 3*i} 0 R`).join(' ')}] /Count ${n} >>`));
+  pages.forEach((p, i) => { const P = 3 + 3*i, C = P + 1, I = P + 2, cs = 'q 595.28 0 0 841.89 0 0 cm /Im0 Do Q';
+    obj(P, () => push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /Im0 ${I} 0 R >> >> /Contents ${C} 0 R >>`));
+    obj(C, () => push(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream`));
+    obj(I, () => { push(`<< /Type /XObject /Subtype /Image /Width ${p.w} /Height ${p.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${p.jpeg.length} >>\nstream\n`); push(p.jpeg); push('\nendstream'); });
+  });
+  const xref = len, total = 3 + 3*n;
+  push(`xref\n0 ${total}\n0000000000 65535 f \n`); for (let i = 1; i < total; i++) push(String(offs[i]).padStart(10, '0') + ' 00000 n \n');
+  push(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts, { type:'application/pdf' });
+}
+async function exportPdf(codes){
+  $('#pdfMenu').open = false;
+  const open = codes.reduce((s, c) => s + items(c).filter(i => i.status === 'open').length, 0);
+  toast('PDF wird erstellt …', 0);
+  try {
+    const pages = [];
+    for (const code of codes){
+      const c = D.codes.find(x => x.code === code);
+      for (let i = 0; i < c.pages.length; i++){ const cv = await pageCanvas(code, i); pages.push(await toPage(cv)); }
+      const sc = summaryCanvas(code); pages.push(await toPage(sc));
+      const f = S.codes[code].foerder;
+      if (f.aktiv) for (const cv of foerderCanvases(code, f.loesung)) pages.push(await toPage(cv));
+    }
+    const name = (D.klausur.id || 'Klausur') + (codes.length === 1 ? `_Code-${codes[0]}` : '_alle') + '_korrigiert.pdf';
+    download(makePdf(pages), name);
+    if (open) setTimeout(() => toast(`Hinweis: ${open === 1 ? '1 offener Vorschlag ist' : open + ' offene Vorschläge sind'} nicht im PDF enthalten (es werden nur angenommene und eigene Anstreichungen übernommen).`, 8000), 2500);
+  } catch(e){ toast('PDF-Export fehlgeschlagen: ' + e.message, 10000); console.error(e); }
+}
+$('#pdfOne').onclick = () => !D ? toast('Bitte zuerst eine Vorkorrektur-PDF öffnen.') : exportPdf([cur.code]);
+$('#pdfAll').onclick = () => !D ? toast('Bitte zuerst eine Vorkorrektur-PDF öffnen.') : exportPdf(D.codes.map(c => c.code));
+$('#importBtn').onclick = () => ($('#standMenu').open = false, D) ? $('#importFile').click() : toast('Erst die Vorkorrektur-PDF öffnen, dann den gesicherten Stand laden.');
+$('#importFile').onchange = async e => { const f = e.target.files[0]; if (!f) return;
+  try { const j = JSON.parse(await f.text()); const st = normalize(j.stand); if (!st) throw 0; S = st; save(); cur.sel = null; refresh(); renderEH(); }
+  catch(_){ toast('Diese Datei ist kein gültiger Korrekturstand.'); } e.target.value = ''; };
+function buildSummary(){
+  const T = totals(), pts = cs().pts;
+  $('#printSummary').innerHTML = `<h2 style="margin:0">Bewertung · Code ${esc(cur.code)}</h2><div>${esc(D.klausur.titel)} · ${esc(D.klausur.datum)}</div>
+    <table><tr><th>Kriterium</th><th class="n">Punkte</th></tr>${D.eh.map((t,i) => `<tr><th>${esc(t.teil)}</th><th class="n">${T.per[i]} / ${t.max}</th></tr>` + t.krit.map(k => `<tr><td>${esc(k.t)}</td><td class="n">${pts[k.id] ?? '–'} / ${k.max}</td></tr>`).join('')).join('')}
+    <tr><th>Gesamt</th><th class="n">${T.G} / ${maxima().I + maxima().S} · Note ${T.note}</th></tr></table>
+    ${cs().kommentar ? `<h3>Kommentar</h3><p>${esc(cs().kommentar).replace(/\n/g,'<br>')}</p>` : ''}`;
+}
+let keepSel = null;
+window.addEventListener('beforeprint', () => { buildSummary(); keepSel = cur.sel; cur.sel = null; drawMarks(); });
+window.addEventListener('afterprint', () => { cur.sel = keepSel; drawMarks(); });
+$('#printBtn').onclick = () => { $('#pdfMenu').open = false; window.print(); };
+document.addEventListener('keydown', e => {
+  if (!D || !booted) return;
+  if (e.target.matches('input,textarea,select')) { if (e.key==='Escape') e.target.blur(); return; }
+  const k = e.key;
+  if (k==='Enter' && cur.sel){ e.preventDefault(); decide(cur.sel,'acc'); }
+  else if ((k==='x'||k==='X'||k==='Delete') && cur.sel){ const it = items().find(i=>i.id===cur.sel); if (it && it.src==='claude') decide(cur.sel,'rej'); }
+  else if (k==='n'||k==='N') nextOpen();
+  else if (k==='ArrowRight') { e.preventDefault(); step(1); }
+  else if (k==='ArrowLeft') { e.preventDefault(); step(-1); }
+  else if ((k==='z'||k==='Z') && (e.ctrlKey||e.metaKey)){ e.preventDefault(); undoInk(); }
+  else if (k==='f'||k==='F') setOwn(cur.own==='ink' ? false : 'ink');
+  else if (k==='e'||k==='E') setOwn(cur.own==='sprache' ? false : 'sprache');
+  else if ((k==='h'||k==='H') && !document.body.classList.contains('noinhalt')) setOwn(cur.own==='haken' ? false : 'haken');
+  else if ((k==='r'||k==='R') && !document.body.classList.contains('noinhalt')) setOwn(cur.own==='rand' ? false : 'rand');
+  else if (k==='Escape'){ setOwn(false); cur.sel = null; refresh(); }
+});
+$('#resetCode').onclick = () => { $('#standMenu').open = false;
+  if (!confirm(`Alle Entscheidungen, eigenen Anstreichungen, Punkte und die Förderauswahl für Code ${cur.code} löschen? Das lässt sich nicht rückgängig machen.`)) return;
+  delete S.codes[cur.code]; S.log = S.log.filter(l => l.code !== cur.code); S = normalize(S); save(); cur.sel = null; refresh(); renderEH(); if (cur.tab === 'fehlerbild') renderFB(); toast(`Code ${cur.code} zurückgesetzt.`); };
+$('#resetAll').onclick = () => { $('#standMenu').open = false;
+  if (!confirm('Den gesamten Korrekturstand dieser Vorkorrektur löschen (alle Codes)? Tipp: vorher „Als Datei sichern“.')) return;
+  S = fresh(); save(); cur.sel = null; refresh(); renderEH(); if (cur.tab === 'fehlerbild') renderFB(); toast('Korrekturstand zurückgesetzt.'); };
+function fatal(e){
+  console.error(e); $('#fatalMsg').textContent = 'Fehler: ' + (e && e.message || e); $('#fatal').style.display = 'flex';
+}
+$('#fatalReset').onclick = () => {
+  try { const old = localStorage.getItem(STORE); if (old) download(new Blob([old], { type:'application/json' }), 'Korrekturstand_Sicherung.json');
+        localStorage.setItem(STORE + ':defekt', old || ''); localStorage.removeItem(STORE); } catch(_){}
+  setTimeout(() => location.reload(), 800);
+};
+let booted = false;
+window.addEventListener('error', e => { if (D && !booted) fatal(e.error || e.message); });
+function boot(data){
+  booted = false; D = data;
+  STORE = 'korrektur-ws:' + (D.paket_id || D.klausur.id || D.klausur.titel);
+  S = load() || fresh();
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(_){}
+  cur = { code: D.codes[0].code, sel: null, filter: 'alle', own: false, tab: 'pruefen' }; undo.length = 0; updTools();
+  $('#start').style.display = 'none'; document.body.classList.add('loaded');
+  document.body.classList.toggle('noinhalt', !D.codes.some(c => (c.inhalt || []).length));
+  document.title = 'Korrektur · ' + (D.klausur.id || D.klausur.titel);
+  try { renderPages(); refresh(); renderEH(); booted = true; } catch(e){ fatal(e); }
+}
+// ---------- Vorkorrektur-PDF lesen ----------
+async function readPackage(file){
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const tail = new TextDecoder('latin1').decode(bytes.subarray(Math.max(0, bytes.length - 4000000)));
+  const m = tail.match(/%KORRDATA (\d+) (\d+)/);
+  if (!m) throw new Error(`„${file.name}“ ist keine Vorkorrektur-PDF (keine Korrekturdaten gefunden). Wurde sie in einem anderen Programm verändert und neu gespeichert?`);
+  const off = +m[1], len = +m[2];
+  const data = JSON.parse(new TextDecoder('utf-8').decode(bytes.subarray(off, off + len)));
+  if (data.format !== 'korrektur-paket') throw new Error(`„${file.name}“: unbekanntes Datenformat.`);
+  data.codes.forEach(c => c.pages.forEach(p => {
+    const i = p.img; if (typeof i === 'string') return;
+    const jpg = bytes.subarray(i.off, i.off + i.len);
+    if (jpg[0] !== 0xFF || jpg[1] !== 0xD8) throw new Error(`„${file.name}“ ist beschädigt (Seitenbild nicht lesbar).`);
+    p.img = URL.createObjectURL(new Blob([jpg], { type:'image/jpeg' }));
+  }));
+  return data;
+}
+async function openFiles(files){
+  $('#startErr').textContent = '';
+  try {
+    if (!files.length) return;
+    let merged = null;
+    for (const f of files){
+      const d = await readPackage(f);
+      if (!merged) merged = d;
+      else {
+        if (d.klausur.id !== merged.klausur.id) throw new Error(`Die Dateien gehören zu verschiedenen Klausuren (${merged.klausur.id} und ${d.klausur.id}). Bitte nur Dateien einer Klausur zusammen öffnen.`);
+        d.codes.forEach(c => { const i = merged.codes.findIndex(x => x.code === c.code); if (i >= 0) merged.codes[i] = c; else merged.codes.push(c); });
+      }
+    }
+    merged.codes.sort((a, b) => a.code.localeCompare(b.code, 'de', { numeric:true }));
+    boot(merged);
+    const done = Object.values(S.codes).reduce((n, c) => n + Object.keys(c.dec).length + c.own.length, 0);
+    toast(`${merged.klausur.titel}: ${merged.codes.length} ${merged.codes.length === 1 ? 'Klausur' : 'Klausuren'} geladen.` + (done ? ` Gespeicherter Stand fortgesetzt (${done} Entscheidungen) – neu beginnen über „Korrekturstand“.` : ''), done ? 9000 : 5000);
+  } catch(e){
+    console.error(e);
+    if (D) toast(e.message, 10000); else $('#startErr').textContent = e.message;
+  }
+}
+$('#openBtn').onclick = $('#startOpen').onclick = () => $('#openFile').click();
+$('#openFile').onchange = e => { openFiles([...e.target.files]); e.target.value = ''; };
+['dragover','dragenter'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#drop').classList.add('over'); }));
+['dragleave','drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#drop').classList.remove('over'); }));
+document.addEventListener('drop', e => openFiles([...(e.dataTransfer && e.dataTransfer.files || [])].filter(f => /\.pdf$/i.test(f.name))));
+if (D) boot(D); else $('#start').style.display = 'flex';
+</script>
+</body>
+</html>
