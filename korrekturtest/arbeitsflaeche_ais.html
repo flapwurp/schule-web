@@ -136,7 +136,8 @@ body.noinhalt .lay,body.noinhalt [data-own="haken"],body.noinhalt [data-own="ran
 .page{touch-action:pan-x pan-y}
 #viewer.fdraw .page{touch-action:none}
 .page img,.page svg{-webkit-touch-callout:none}
-.vbar{flex-wrap:wrap;row-gap:6px}
+.vbar{flex-wrap:wrap;row-gap:6px;column-gap:12px}
+.vbar input[type=range]{width:90px}
 .tools{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
 .tools button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--ink)}
 .tools button.on{background:var(--red);border-color:var(--red);color:#fff}
@@ -150,9 +151,9 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
 .qpop .qlab{font-weight:650;color:var(--red);margin:0 2px 2px;font-size:16px}
 .qpop .qmeta{font-size:11.5px;color:var(--muted);margin:0 2px}
 .qpop .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
-.qpop button{white-space:nowrap;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:7px 12px;min-width:44px;font-size:14px}
-.qpop button.qa{background:var(--ok);border-color:var(--ok);color:#fff;flex:1}
-.qpop button.qr{color:var(--red);border-color:#e3b9b9;background:#fff;flex:1}
+.qpop button{flex:0 0 auto;white-space:nowrap;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:7px 12px;min-width:44px;font-size:14px}
+.qpop button.qa{background:var(--ok);border-color:var(--ok);color:#fff;flex:1 0 auto}
+.qpop button.qr{color:var(--red);border-color:#e3b9b9;background:#fff;flex:1 0 auto}
 .qpop button.on{background:var(--red);border-color:var(--red);color:#fff}
 .qpop .signs button{padding:6px 0;min-width:44px}
 .qpop input{margin-top:7px}
@@ -160,11 +161,11 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
   background:linear-gradient(transparent 61px,#c9d3e3 61px,#c9d3e3 62px,transparent 62px) #fffdf6}
 .qpad canvas{display:block;width:100%;height:90px;touch-action:none;cursor:crosshair}
 .qpad .qph{position:absolute;left:8px;top:5px;font-size:11.5px;color:var(--muted);pointer-events:none}
-.mk path.cink{fill:none;stroke:var(--red);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mk path.cink{fill:none;stroke:var(--red);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mk.rej path.cink{stroke:var(--grey)}
 @media (any-pointer:coarse){
   .tool,.btn{min-height:44px}
-  .tools button{min-height:40px;padding:6px 12px}
+  .tools button{min-height:38px;padding:4px 10px}
   .signs button{min-height:40px;min-width:44px}
   .li{padding:11px 4px}
   .filters button,.chip{padding:7px 12px}
@@ -881,10 +882,18 @@ $('#finger').onchange = () => updTools();
 // ---------- Handschriftliche Positivkorrektur ----------
 // Gespeichert als Vektorstriche in Schreibflächen-Koordinaten { h: Höhe der Fläche, s: [[ [x,y], … ], …] };
 // in der Randspalte auf Texthöhe skaliert (Fläche 90 px hoch -> 42 Einheiten, Hilfslinie der Fläche = Grundlinie des Textes).
-const INKH = 42;
-function inkBox(k){ let a = 1e9, b = -1e9; k.s.forEach(st => st.forEach(q => { a = Math.min(a, q[0]); b = Math.max(b, q[0]); })); return [a, b]; }
-function inkW(k){ const [a, b] = inkBox(k); return (b - a) * INKH / k.h + 4; }
-function inkNote(k, x, y){ const a = inkBox(k)[0], sc = INKH / k.h; return k.s.map(st => inkD(st.map(q => [r1(x + 2 + (q[0] - a) * sc), r1(y + (q[1] - k.h * 62 / 90) * sc)]))).join(' '); }
+const INK_TXT = 20, INK_MAXW = 200, inkCache = new WeakMap();
+function inkGeo(k){
+  let g = inkCache.get(k); if (g) return g;
+  let a = 1e9, b = -1e9, c = 1e9, d = -1e9;
+  k.s.forEach(st => st.forEach(q => { a = Math.min(a, q[0]); b = Math.max(b, q[0]); c = Math.min(c, q[1]); d = Math.max(d, q[1]); }));
+  // Höhe der Handschrift auf etwa Texthöhe bringen; sehr breite Wörter so weit verkleinern, dass sie in die Randspalte passen
+  const sc = Math.max(0.2, Math.min(0.7, INK_TXT / Math.max(d - c, 1), INK_MAXW / Math.max(b - a, 1)));
+  const line = k.h * 62 / 90, base = (d < line - 8 || c > line) ? d : line;   // Grundlinie: Hilfslinie, sonst Unterkante der Schrift
+  g = { a, b, sc, base }; inkCache.set(k, g); return g;
+}
+function inkW(k){ const g = inkGeo(k); return (g.b - g.a) * g.sc + 4; }
+function inkNote(k, x, y){ const g = inkGeo(k); return k.s.map(st => inkD(st.map(q => [r1(x + 2 + (q[0] - g.a) * g.sc), r1(y + (q[1] - g.base) * g.sc)]))).join(' '); }
 let lastPtr = matchMedia('(any-pointer:coarse)').matches ? 'touch' : 'mouse', keepPop = false;
 document.addEventListener('pointerdown', e => { lastPtr = e.pointerType || lastPtr; }, true);
 const usePad = () => cur.pad != null ? cur.pad : lastPtr !== 'mouse';
@@ -929,10 +938,19 @@ function renderPop(){
            : `<button data-q="pen" title="Positivkorrektur mit Stift oder Maus schreiben">✎</button>`}${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done">Fertig</button>` : ''}</div>` : '');
   page.appendChild(el);
   const P = codeData().pages[it.page], s = it.segs[it.segs.length-1], sc = page.clientWidth / P.w, w = el.offsetWidth, h = el.offsetHeight;
-  let x = s[0] * sc, y = (s[2] + 14) * sc;
-  if (x + w > page.clientWidth - 4) x = Math.max(4, page.clientWidth - w - 4);
-  if (y + h > page.clientHeight - 4) y = Math.max(4, (s[2] - 44) * sc - h);
+  // waagerecht: links vom Korrekturrand bleiben, damit die Randspalte (dort erscheint das Ergebnis) sichtbar bleibt
+  const textR = (P.side === 'L' ? page.clientWidth : P.rt * sc) - 6, textL = P.side === 'L' ? P.lt * sc + 6 : 4;
+  let x = Math.max(textL, Math.min(s[0] * sc, textR - w)); if (x + w > page.clientWidth - 4) x = Math.max(4, page.clientWidth - w - 4);
+  // senkrecht: unter der Anstreichung; reicht der sichtbare Platz nicht, darüber
+  const vr = VW.getBoundingClientRect(), pr = page.getBoundingClientRect(), bar = $('.vbar').getBoundingClientRect().bottom;
+  const below = (s[2] + 16) * sc, above = (s[2] - 40) * sc - h;
+  let y = below;
+  if ((pr.top + below + h > vr.bottom - 8 || below + h > page.clientHeight) && above >= 0 && pr.top + above >= bar) y = above;
   el.style.left = x + 'px'; el.style.top = y + 'px';
+  clearTimeout(renderPop.t);
+  renderPop.t = setTimeout(() => { if (!el.isConnected) return; const r = el.getBoundingClientRect(), v = VW.getBoundingClientRect(), b = $('.vbar').getBoundingClientRect().bottom;
+    if (r.bottom > v.bottom - 8) VW.scrollBy({ top: Math.min(r.bottom - v.bottom + 16, r.top - b - 8), behavior: 'smooth' });
+    else if (r.top < b + 4) VW.scrollBy({ top: r.top - b - 12, behavior: 'smooth' }); }, 450);
   el.addEventListener('pointerdown', e => e.stopPropagation());
   el.onclick = e => { const b = e.target.closest('button'); if (!b) return; e.stopPropagation();
     if (b.dataset.s) return edit(it, { sign: b.dataset.s });
@@ -1014,7 +1032,7 @@ async function pageCanvas(code, pi){
     (notes[it.id] || []).forEach(n => {
       if (n.num){ g.font = 'bold 13px Helvetica, Arial, sans-serif'; g.fillText(n.num, n.x, n.y - 4); }
       g.font = FONT; const tx = n.x + (n.num ? NUMW : 0) + (n.indent || 0);
-      if (n.ink){ const ta = tw(n.txt + ' ('); g.fillText(n.txt + ' (', tx, n.y); g.save(); g.lineWidth = 2.2; g.setLineDash([]); g.globalAlpha = 1;
+      if (n.ink){ const ta = tw(n.txt + ' ('); g.fillText(n.txt + ' (', tx, n.y); g.save(); g.lineWidth = 1.8; g.setLineDash([]); g.globalAlpha = 1;
         g.stroke(new Path2D(inkNote(n.ink, tx + ta, n.y))); g.restore(); g.fillText(')', tx + ta + inkW(n.ink), n.y); }
       else g.fillText(n.txt, tx, n.y);
     });

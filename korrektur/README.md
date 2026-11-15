@@ -10,7 +10,7 @@ Werkzeuge für die KI-gestützte **sprachliche Vorkorrektur** handschriftlicher 
 | --- | --- |
 | `arbeitsflaeche/` | Die Arbeitsfläche als einzelne Offline-HTML-Datei. Im Browser öffnen (Chrome, Edge, Firefox), Vorkorrektur-PDF hineinziehen. Es wird nichts hochgeladen. |
 | `werkzeuge/` | `kw.py` (Scan einlesen, Wortfelder, Vorschläge, Vorkorrektur-PDF bauen), `bogen.py` (Klausurbögen mit Code, QR und Ankerpunkten), `resolve.py` (Hilfsfunktion), `korrekturprofil.md` (Korrekturregeln). |
-| `tests/` | `mkdata.py` (Demo mit synthetischen Daten), `test_touch.py` (Browser-Tests: Maus, Touch, Stift, Export), `patch_handschrift.py` (bereits angewendeter Einmal-Patch, nur zur Nachvollziehbarkeit). |
+| `tests/` | `mkdata.py` (Demo mit synthetischen Daten), `test_touch.py` (Browser-Tests: Maus, Touch, Stift, Export), `patch_handschrift.py`, `patch_layout.py` (bereits angewendete Einmal-Patches, nur zur Nachvollziehbarkeit). |
 | `ais-version/` | Weiterentwicklung für **AIS.chat** (Landeslösung, Betrieb in der EU): Die Arbeitsfläche übernimmt Ausrichten, Zuordnen und Einlesen selbst; AIS.chat liefert nur Abschrift und Korrekturliste als Text. Siehe `ais-version/README.md`. |
 
 ## Versionen
