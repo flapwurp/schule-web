@@ -74,6 +74,14 @@ header .sub{font-size:12px;color:var(--muted);white-space:nowrap}
 .menu .pop .danger .ph{color:var(--danger)}
 #resetCode,#resetAll{color:var(--danger)}#resetCode .i,#resetAll .i{color:var(--danger)}
 .menu .pop kbd{margin-left:auto}
+.qbtn{width:38px;justify-content:center;padding:7px 0;font:700 16px var(--f-head);border-radius:999px}
+.help .pop{width:min(400px,92vw);max-height:min(76vh,640px);overflow:auto;padding:14px 18px 16px;font-size:13.5px}
+.help h4{font:650 14.5px var(--f-head);margin:12px 0 6px}.help h4:first-child{margin-top:2px}
+.help .howto{margin:0;padding-left:20px;display:grid;gap:7px;line-height:1.45}
+.help .howto li::marker{color:var(--accent);font-weight:700}
+.help .hk{font-weight:600;padding:0 6px;border-radius:5px}.help .hk.ok{background:var(--ok-soft);color:#145e3c}.help .hk.no{background:var(--danger-soft);color:var(--danger)}
+.help .kbgrid kbd{margin-left:0}
+.help .note{margin:4px 0 2px}
 
 /* ---------- Arbeitsbereich ---------- */
 main{display:flex;flex:1;min-height:0}
@@ -443,6 +451,24 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
     <button id="exportBtn"><svg class="i"><use href="#i-save"/></svg>Als Datei sichern …</button><button id="importBtn"><svg class="i"><use href="#i-load"/></svg>Aus Datei laden …</button>
     <div class="danger"><div class="ph">Zurücksetzen (nicht rückgängig zu machen)</div>
     <button id="resetCode"><svg class="i"><use href="#i-reset"/></svg>Diesen Code zurücksetzen</button><button id="resetAll"><svg class="i"><use href="#i-reset"/></svg>Ganze Klausur zurücksetzen</button></div></div></details>
+  <details class="menu nd help" id="helpMenu"><summary class="tool qbtn" title="Hilfe und Tastenkürzel (?)" aria-label="Hilfe">?</summary>
+    <div class="pop">
+      <h4>So korrigierst du</h4>
+      <ol class="howto">
+        <li><b>Vorschlag antippen</b> – im Schnellmenü <span class="hk ok">Annehmen</span>, <span class="hk no">Verwerfen</span> oder „Ändern“. Danach springt es zum nächsten offenen Vorschlag.</li>
+        <li><b>Eigene Anstreichung</b> – Werkzeug „Unterstreichen“, Wort unterstreichen, Korrekturzeichen antippen, Positivkorrektur optional.</li>
+        <li><b>Freihand</b> – freie Anmerkungen. Sie kommen ins PDF, zählen aber nicht für Bewertung und Förderblatt.</li>
+        <li><b>Bewertung</b> – Punkte eintragen. <b>Förderung</b> – Übungen prüfen. Dann <b>PDF exportieren</b>.</li>
+      </ol>
+      <h4>Am iPad</h4>
+      <p class="note">Der Stift zeichnet, der Finger scrollt, zwei Finger zoomen. Ohne Stift „Finger zeichnet“ einschalten. Die Seitenleiste lässt sich am Griff größer und kleiner ziehen.</p>
+      <h4>Tastenkürzel</h4>
+      <div class="kbgrid">
+        <span><kbd>N</kbd></span><span>nächster offener Vorschlag</span><span><kbd>↵</kbd></span><span>annehmen</span><span><kbd>X</kbd></span><span>verwerfen</span>
+        <span><kbd>←</kbd> <kbd>→</kbd></span><span>vorherige / nächste Anstreichung</span><span><kbd>E</kbd></span><span>Unterstreichen</span><span><kbd>F</kbd></span><span>Freihand</span>
+        <span><kbd>Strg</kbd>+<kbd>Z</kbd></span><span>Freihand rückgängig</span><span><kbd>Esc</kbd></span><span>Auswahl und Werkzeug aufheben</span><span><kbd>?</kbd></span><span>diese Hilfe</span></div>
+      <p class="note">Die Farben auf dem Scan erklärt die Legende unter „Ansicht“.</p>
+    </div></details>
   <details class="menu nd" id="pdfMenu"><summary class="tool pri"><svg class="i"><use href="#i-pdf"/></svg><span class="hide-s">PDF exportieren</span><span class="sr">PDF exportieren</span></summary>
     <div class="pop"><button id="pdfOne"><svg class="i"><use href="#i-pdf"/></svg>Dieser Code</button><button id="pdfAll"><svg class="i"><use href="#i-pdf"/></svg>Alle Codes (eine Datei)</button><hr><button id="printBtn"><svg class="i"><use href="#i-print"/></svg>Drucken …</button></div></details>
   <input type="file" id="openFile" accept=".pdf,application/pdf" multiple hidden>
@@ -724,10 +750,7 @@ function renderRecent(){ let r = []; try { r = JSON.parse(localStorage.getItem(R
     `<div class="rc"><b>${esc(x.t)}</b><span>${x.f} von ${x.n} fertig · ${new Date(x.ts).toLocaleDateString('de-DE', { day:'numeric', month:'numeric' })}</span></div>`).join(''); }
 function gotoCode(code){ cur.code = code; cur.sel = null; renderPages(); refresh(); renderEH(); if (cur.tab === 'fehlerbild') renderFB(); }
 // ---------- Prüfen ----------
-const KB = `<details class="kb"><summary><svg class="i chev"><use href="#i-right"/></svg>Tastenkürzel</summary><div class="kbgrid">
-  <span><kbd>N</kbd></span><span>nächster offener Vorschlag</span><span><kbd>↵</kbd></span><span>annehmen</span><span><kbd>X</kbd></span><span>verwerfen</span>
-  <span><kbd>←</kbd> <kbd>→</kbd></span><span>blättern</span><span><kbd>E</kbd></span><span>eigene Anstreichung (Unterstreichen)</span><span><kbd>F</kbd></span><span>Freihand</span>
-  <span><kbd>Strg</kbd>+<kbd>Z</kbd></span><span>Freihand rückgängig</span><span><kbd>Esc</kbd></span><span>Auswahl aufheben</span></div></details>`;
+const KB = `<p class="note" style="margin:12px 0 0">Hilfe und Tastenkürzel: <button class="btn ghost" id="openHelp" style="padding:2px 10px;font-weight:700">?</button></p>`;
 const stTxt = s => ({ open:'offen', acc:'angenommen', rej:'verworfen' }[s]);
 const stBadge = (it, changed) => `<span class="badge s-${it.status}">${it.status==='acc' ? '<svg class="i" style="width:13px;height:13px"><use href="#i-check"/></svg>' : ''}${stTxt(it.status)}${changed?', geändert':''}</span>`;
 function renderEditor(){
@@ -745,7 +768,8 @@ function renderEditor(){
     ed.innerHTML = `<div class="card"><h3>${open ? `${open} ${open===1 ? 'Vorschlag wartet' : 'Vorschläge warten'} auf dich` : 'Nichts ausgewählt'}</h3>
       <p class="note">Tippe eine Anstreichung im Scan oder in der Liste an. Im Schnellmenü an der Stelle nimmst du sie an, verwirfst oder änderst sie.</p>
       ${open ? `<div class="row"><button class="btn pri" id="goNext">Ersten offenen Vorschlag zeigen <small>N</small></button></div>` : ''}${KB}</div>`;
-    const b = $('#goNext'); if (b) b.onclick = () => nextOpen(); return; }
+    const b = $('#goNext'); if (b) b.onclick = () => nextOpen();
+    const hb = $('#openHelp'); if (hb) hb.onclick = e => { e.stopPropagation(); $('#helpMenu').open = true; }; return; }
   const all = items(), idx = all.indexOf(all.find(i => i.id===it.id));
   const st = stTxt(it.status);
   if (isI(it)) return renderEditorInhalt(it, idx, all, st);
@@ -1421,7 +1445,8 @@ document.addEventListener('keydown', e => {
   else if (k==='e'||k==='E') setOwn(cur.own==='sprache' ? false : 'sprache');
   else if ((k==='h'||k==='H') && !document.body.classList.contains('noinhalt')) setOwn(cur.own==='haken' ? false : 'haken');
   else if ((k==='r'||k==='R') && !document.body.classList.contains('noinhalt')) setOwn(cur.own==='rand' ? false : 'rand');
-  else if (k==='Escape'){ setOwn(false); cur.sel = null; refresh(); }
+  else if (k==='?'){ $('#helpMenu').open = !$('#helpMenu').open; }
+  else if (k==='Escape'){ if ($('#helpMenu').open){ $('#helpMenu').open = false; return; } setOwn(false); cur.sel = null; refresh(); }
 });
 $('#resetCode').onclick = () => { $('#standMenu').open = false;
   if (!confirm(`Alle Entscheidungen, eigenen Anstreichungen, Punkte und die Förderauswahl für Code ${cur.code} löschen? Das lässt sich nicht rückgängig machen.`)) return;

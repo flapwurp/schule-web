@@ -30,6 +30,7 @@ Nur Oberfläche, Funktionen und Datenformat unverändert (alle Browser-Tests in 
 - **Bewertung:** Teile aufklappbar, Teilsumme und Zahl der offenen Kriterien im Kopf, leere Felder grau.
 - **Förderung:** Empfehlungen mit ★ statt grünem Rand, doppelte Titel entfernt.
 - **Start:** Ablauf in drei Schritten, zuletzt bearbeitete Klausuren mit Fortschritt.
+- **Hilfe:** Knopf „?“ in der Kopfzeile (oder Taste ?) mit Kurzanleitung, iPad-Hinweisen und Tastenkürzeln.
 - **iPad hochkant:** Seitenleiste als Blatt von unten (Griff antippen = größer/kleiner, ziehen = Höhe frei), Werkzeuge nur als Icons.
 
 ## Touch- und Stift-Bedienung (Prototyp, 15.11.2026)
