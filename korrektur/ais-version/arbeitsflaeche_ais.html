@@ -7,190 +7,362 @@
 <meta name="mobile-web-app-capable" content="yes">
 <title>Korrektur-Arbeitsfläche (AIS)</title>
 <style>
+/* ===== Gestaltung: Schreibtisch (hell, kühl), Königsblau als Bedienfarbe, Korrekturrot nur auf dem Papier ===== */
 :root{
-  --bg:#eceef1; --panel:#ffffff; --ink:#1d2329; --muted:#66707a; --line:#d9dde2; --soft:#f4f5f7;
-  --red:#8f1010; --amber:#b26b00; --grey:#9aa0a6; --ok:#1f7a4d; --sel:rgba(255,214,0,.38); --accent:#2b4c7e;
+  --bg:#e7ecf3; --panel:#ffffff; --ink:#1e2940; --muted:#5d6980; --line:#d6dde8; --soft:#f1f4f9; --soft2:#e9eef6;
+  --accent:#2e56c9; --accent-ink:#1f3f9e; --accent-soft:#e5ecfc;
+  --red:#8f1010; --danger:#b42318; --danger-soft:#fdeceb;
+  --ok:#1d8656; --ok-soft:#e2f3ea; --amber:#b26b00; --amber-soft:#fff1d9; --violet:#7048b8; --violet-soft:#efe9fa;
+  --grey:#9aa0a6; --sel:rgba(255,214,0,.38); --margin:#efb1b1;
+  --f-ui:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --f-head:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r-s:8px; --r-m:12px; --r-l:16px;
+  --pop:0 10px 30px rgba(30,41,64,.16),0 2px 6px rgba(30,41,64,.08);
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
-button{font:inherit;cursor:pointer}
-header{height:58px;display:flex;align-items:center;gap:16px;padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line)}
-header h1{font-size:15px;margin:0;font-weight:650;white-space:nowrap}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:14px/1.45 var(--f-ui)}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px;border-radius:6px}
+svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-4px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- Kopfzeile ---------- */
+body{display:flex;flex-direction:column}
+header{flex:none;height:58px;display:flex;align-items:center;gap:14px;padding:0 14px 0 12px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.brand .logo{width:34px;height:34px;flex:none}
+header h1{font:650 15.5px/1.2 var(--f-head);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px}
 header .sub{font-size:12px;color:var(--muted);white-space:nowrap}
-.codes{display:flex;gap:6px;margin-left:12px}
-.codes button{border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:flex-start;min-width:118px}
-.codes button.on{border-color:var(--accent);background:#e8eef7}
-.codes b{font-size:13px}.codes small{font-size:11px;color:var(--muted)}
-.bar{height:3px;background:var(--line);border-radius:2px;width:100%;margin-top:3px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ok)}
 .spacer{flex:1}
-.tool{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;white-space:nowrap;font-size:13px}
+.tool{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel);border-radius:var(--r-s);padding:7px 12px;white-space:nowrap;font-size:13.5px;font-weight:500;color:var(--ink)}
 .tool:hover{background:var(--soft)}
-.tool.on{background:var(--red);color:#fff;border-color:var(--red)}
-.saved{font-size:11px;color:var(--muted);white-space:nowrap}
-body{display:flex;flex-direction:column}header{flex:none}main{display:flex;flex:1;min-height:0}
+.tool.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.tool.pri:hover{background:var(--accent-ink)}
+.tool.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
+.saved{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);white-space:nowrap;min-width:120px;justify-content:flex-end}
+.saved .i{width:15px;height:15px;color:var(--ok)}
+.saved.bad{color:var(--danger)}.saved.bad .i{color:var(--danger)}
+
+/* Kursleiste: ein Chip pro Code */
+.codes{display:flex;align-items:center;gap:6px;min-width:0;flex:0 1 auto}
+.codes .nav{border:1px solid var(--line);background:var(--panel);border-radius:999px;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;flex:none;color:var(--muted)}
+.codes .nav:hover:not(:disabled){background:var(--soft);color:var(--ink)}
+.codes .nav:disabled{opacity:.35;cursor:default}
+.codes .strip{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;max-width:min(46vw,560px);padding:3px 2px;scroll-behavior:smooth}
+.codes .strip::-webkit-scrollbar{display:none}
+.cchip{position:relative;flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:4px 11px 4px 6px;font-size:13px;font-weight:600;color:var(--ink)}
+.cchip:hover{background:var(--soft2)}
+.cchip .ring{width:18px;height:18px;flex:none}
+.cchip .ring circle{fill:none;stroke-width:3.2}
+.cchip .ring .bg{stroke:var(--line)}.cchip .ring .fg{stroke:var(--accent);stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.cchip.done{background:var(--ok-soft);border-color:#b8dfc9;color:#145e3c}
+.cchip.done .ring .fg{stroke:var(--ok)}
+.cchip.on{background:var(--panel);border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft);color:var(--accent-ink)}
+.cchip.on.done{color:#145e3c;border-color:var(--ok);box-shadow:0 0 0 2px var(--ok-soft)}
+.codes .csum{font-size:12px;color:var(--muted);white-space:nowrap;margin-left:4px}
+
+/* Menüs */
+.menu{position:relative}.menu summary{list-style:none}.menu summary::-webkit-details-marker{display:none}
+.menu summary .chev{width:14px;height:14px;opacity:.6;margin-left:-2px}
+.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:var(--r-m);box-shadow:var(--pop);padding:6px;z-index:20;min-width:250px}
+.menu .pop button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:0;background:none;padding:9px 10px;border-radius:var(--r-s);font-size:13.5px}
+.menu .pop button:hover{background:var(--soft)}
+.menu .pop button .i{color:var(--muted)}
+.menu .pop hr{border:0;border-top:1px solid var(--line);margin:6px 4px}
+.menu .pop .ph{font-size:11.5px;font-weight:600;color:var(--muted);padding:6px 10px 2px}
+.menu .pop .danger{background:var(--danger-soft);border-radius:var(--r-s);margin-top:4px;padding:2px}
+.menu .pop .danger .ph{color:var(--danger)}
+#resetCode,#resetAll{color:var(--danger)}#resetCode .i,#resetAll .i{color:var(--danger)}
+.menu .pop kbd{margin-left:auto}
+
+/* ---------- Arbeitsbereich ---------- */
+main{display:flex;flex:1;min-height:0}
 #viewer{flex:1;overflow:auto;padding:0 24px 80px}
-.vbar{position:sticky;top:0;z-index:5;display:flex;gap:18px;align-items:center;padding:8px 4px;margin-bottom:10px;background:var(--bg);font-size:12.5px;color:var(--muted)}
-.vbar input[type=range]{width:110px;vertical-align:middle}
-.lay{display:flex;gap:10px;align-items:center}.lay label{display:flex;gap:4px;align-items:center}
-.legend{margin-left:auto;display:flex;gap:6px;align-items:center}.legend i{display:inline-block;width:22px;height:0;border-top:2.5px solid var(--red);margin-left:10px}.legend i.lo{border-top-style:dashed}.legend i.lu{border-top:2.5px dashed var(--amber)}
+.vbar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;row-gap:8px;column-gap:12px;align-items:center;padding:10px 4px;background:linear-gradient(var(--bg) 82%,rgba(231,236,243,0));font-size:13px;color:var(--muted)}
+.tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-m);padding:3px;gap:2px;box-shadow:0 1px 2px rgba(30,41,64,.05)}
+.seg button,.tools .ibtn{display:inline-flex;align-items:center;gap:6px;border:0;background:none;border-radius:9px;padding:6px 11px;font-size:13.5px;font-weight:500;color:var(--ink)}
+.seg button:hover{background:var(--soft)}
+.seg button.on{background:var(--accent);color:#fff}
+.tools .ibtn{background:var(--panel);border:1px solid var(--line);padding:7px 9px;border-radius:var(--r-m)}
+.tools .ibtn:disabled{opacity:.4;cursor:default}
+.tools .fd{display:none;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--ink);cursor:pointer}
+.tools .fd input{accent-color:var(--accent);margin:0}
+.vright{margin-left:auto;display:flex;align-items:center;gap:8px}
+.zoomctl{display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:2px}
+.zoomctl button{border:0;background:none;width:30px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--ink)}
+.zoomctl button:hover{background:var(--soft)}
+.zoomctl span{min-width:46px;text-align:center;font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.vmenu .pop{min-width:270px;padding:10px 12px;color:var(--ink)}
+.vmenu .pop label{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13.5px;cursor:pointer}
+.vmenu .pop input{accent-color:var(--accent)}
+.vmenu .lay{display:block}
+.legend{display:grid;grid-template-columns:30px 1fr;gap:7px 10px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:4px}
+.legend i{display:block;height:0;border-top:2.6px solid var(--red)}
+.legend i.lo{border-top-style:dashed;opacity:.55}.legend i.lu{border-top:2.6px dashed var(--amber)}.legend i.le{border-top:2.6px dashed var(--violet)}.legend i.lr{border-top:2.6px dotted var(--grey)}
 #viewer.own .ov{cursor:crosshair}
-.page{position:relative;margin:26px auto 22px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
-.page img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none}
+.page{position:relative;margin:30px auto 26px;background:#fff;border-radius:3px;box-shadow:0 1px 2px rgba(30,41,64,.12),0 8px 24px rgba(30,41,64,.08)}
+.page img{display:block;width:100%;height:auto;user-select:none;-webkit-user-drag:none;border-radius:3px}
 .page .ov{position:absolute;inset:0;width:100%;height:100%}
-.page .lbl{position:absolute;left:-2px;top:-18px;font-size:11px;color:var(--muted)}
+.page .lbl{position:absolute;left:2px;top:-22px;font-size:12px;font-weight:600;color:var(--muted)}
+
+/* Anstreichungen auf dem Scan (Korrekturrot bleibt hier) */
 svg text{font-family:Helvetica,Arial,sans-serif}
 .mk line.u,.mk path.u{stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;fill:none}
 svg line.lead{stroke:var(--red);stroke-width:1.2;stroke-dasharray:3 4;opacity:.55}
 .mk line.hit{stroke:transparent;stroke-width:22;cursor:pointer}
 .mk text{font-size:18px;cursor:pointer}
 .mk text.num{font-size:13px;font-weight:700}
-.mk.open line.u,.mk.open path.u{stroke:var(--red);stroke-dasharray:7 5;opacity:.85}
-.mk.open text{fill:var(--red);opacity:.85;font-style:italic}
-.mk.uns line.u,.mk.uns path.u{stroke:var(--amber)} .mk.uns text{fill:var(--amber)}
+.mk.open line.u,.mk.open path.u{stroke:var(--red);stroke-dasharray:7 5;opacity:.5}
+.mk.open text{fill:var(--red);opacity:.6;font-style:italic}
+.mk.uns line.u,.mk.uns path.u{stroke:var(--amber);opacity:.85} .mk.uns text{fill:var(--amber);opacity:.9}
+.mk.erm line.u,.mk.erm path.u{stroke:var(--violet);opacity:.8} .mk.erm text{fill:var(--violet);opacity:.9}
 .mk.acc line.u,.mk.acc path.u{stroke:var(--red)} .mk.acc text{fill:var(--red)}
 .mk.rej line.u,.mk.rej path.u{stroke:var(--grey);stroke-dasharray:2 5} .mk.rej text{fill:var(--grey);text-decoration:line-through}
 .mk .hk,.mk .bar{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.mk.open .hk,.mk.open .bar{stroke:var(--red);opacity:.6}.mk.open .bar{stroke-dasharray:7 5}
+.mk.open .hk,.mk.open .bar{stroke:var(--red);opacity:.5}.mk.open .bar{stroke-dasharray:7 5}
 .mk.acc .hk,.mk.acc .bar{stroke:var(--red)}.mk.rej .hk,.mk.rej .bar{stroke:var(--grey)}
 .mk text.par{font-size:20px}.mk rect.hitbox{fill:transparent;cursor:pointer}
 .mk rect.sel{fill:var(--sel);display:none}.mk.selected rect.sel{display:block}
+.mk.selected line.u,.mk.selected path.u,.mk.selected text{opacity:1}
 #tmp{stroke:var(--red);stroke-width:2.6}
-#ownBtn.on{background:var(--red);color:#fff;border-color:var(--red)}
-aside{width:410px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column}
-.tabs{display:flex;border-bottom:1px solid var(--line)}
-.tabs button{flex:1;border:0;background:none;padding:12px 0;color:var(--muted);border-bottom:2px solid transparent}
-.tabs button.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
-.pane{flex:1;overflow:auto;padding:14px 16px;display:none}.pane.on{display:block}
-.card{border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px;background:#fff}
-.card h3{margin:0 0 8px;font-size:13px;font-weight:650}
-.meta{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.badge{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;background:var(--soft);border:1px solid var(--line);color:var(--ink)}
-.badge.e{background:#f3ecfb;border-color:#d9c7ef}.badge.u{background:#fff3df;border-color:#f0cf96;color:#7a4a00}
-.badge.r{background:#fbeaea;border-color:#efc4c4}.badge.i{background:#e7f5ee;border-color:#b9e0cb}.badge.c{background:#e8eef7;border-color:#c5d3ea}
-.signs{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 10px}
-.signs button{border:1px solid var(--line);background:var(--soft);border-radius:6px;padding:4px 8px;min-width:36px}
-.signs button.on{background:var(--red);border-color:var(--red);color:#fff}
-label.f{display:block;font-size:12px;color:var(--muted);margin:6px 0 3px}
-input[type=text],select,textarea{width:100%;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font:inherit;background:#fff}
-textarea{min-height:70px;resize:vertical}
-.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.btn{border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:#fff}
-.btn.pri{background:var(--ok);border-color:var(--ok);color:#fff}
-.btn.neg{color:var(--red);border-color:#e3b9b9}
-.btn small{opacity:.75;font-size:11px;margin-left:4px}
+#ownBtn.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ---------- Seitenleiste ---------- */
+aside{width:410px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;position:relative}
+.grab{display:none}
+.tabs{display:flex;gap:4px;padding:10px 12px 0;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;border:0;background:none;padding:9px 4px 11px;color:var(--muted);font-weight:500;border-bottom:2.5px solid transparent;margin-bottom:-1px}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{color:var(--accent-ink);border-bottom-color:var(--accent);font-weight:650}
+.tabs .tc{font-size:11.5px;font-weight:600;background:var(--soft2);color:var(--muted);border-radius:999px;padding:1px 7px;font-variant-numeric:tabular-nums}
+.tabs .tc:empty{display:none}
+.tabs .tc.hot{background:var(--accent);color:#fff}
+.tabs .tc.ok{background:var(--ok-soft);color:#145e3c}
+/* Heftrand: die Seitenleiste als Heftseite */
+.pane{flex:1;overflow:auto;padding:16px 16px 16px 34px;display:none;background:linear-gradient(90deg,transparent 21px,var(--margin) 21px,var(--margin) 22.5px,transparent 22.5px)}
+.pane.on{display:block}
+.card{border:1px solid var(--line);border-radius:var(--r-m);padding:14px;margin-bottom:14px;background:#fff}
+.card h3{margin:0 0 8px;font:650 15px/1.3 var(--f-head)}
+.meta{font-size:12.5px;color:var(--muted);margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500;padding:1px 8px;border-radius:999px;background:var(--soft2);color:var(--ink);white-space:nowrap}
+.badge.e{background:var(--violet-soft);color:#4f2f8c}.badge.u{background:var(--amber-soft);color:#7a4a00}
+.badge.r{background:var(--accent-soft);color:var(--accent-ink)}.badge.i{background:var(--ok-soft);color:#145e3c}.badge.c{background:var(--soft2);color:var(--muted)}
+.badge.s-open{background:var(--soft2);color:var(--ink)}.badge.s-acc{background:var(--ok-soft);color:#145e3c}.badge.s-rej{background:#eceef1;color:#6b7280}
+.signs{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 12px}
+.signs button{border:1px solid var(--line);background:var(--panel);border-radius:var(--r-s);padding:5px 0;min-width:40px;font-weight:600;font-size:13.5px}
+.signs button:hover{background:var(--soft)}
+.signs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.toggle2{display:inline-flex;background:var(--soft);border-radius:var(--r-s);padding:3px;gap:2px;margin:4px 0 12px}
+.toggle2 button{border:0;background:none;border-radius:6px;padding:5px 12px;font-size:13px;color:var(--muted)}
+.toggle2 button.on{background:var(--panel);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(30,41,64,.12)}
+label.f{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:8px 0 4px}
+input[type=text],input[type=number],select,textarea{width:100%;border:1px solid var(--line);border-radius:var(--r-s);padding:8px 10px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{min-height:80px;resize:vertical}
+.row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);border-radius:var(--r-s);padding:8px 13px;background:#fff;font-weight:500}
+.btn:hover{background:var(--soft)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-ink)}
+.btn.okb{background:var(--ok);border-color:var(--ok);color:#fff}
+.btn.okb:hover{filter:brightness(.94)}
+.btn.neg{color:var(--danger);border-color:#f0c4c0;background:#fff}
+.btn.neg:hover{background:var(--danger-soft)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted)}
+.btn.ghost:hover{background:var(--soft);color:var(--ink)}
+.btn.big{padding:12px 22px;font-size:15px;border-radius:var(--r-m)}
+.btn small{font:600 10.5px/1 var(--f-ui);opacity:.75;border:1px solid currentColor;border-radius:4px;padding:2px 4px;margin-left:2px}
+.btn.pri small,.btn.okb small{border-color:rgba(255,255,255,.6)}
 .empty{color:var(--muted);font-size:13px}
-.list{border-top:1px solid var(--line);margin-top:4px}
-.li{display:grid;grid-template-columns:18px 54px 1fr auto;gap:6px;align-items:center;padding:6px 4px;border-bottom:1px solid var(--soft);cursor:pointer;font-size:13px}
-.li:hover{background:var(--soft)} .li.on{background:#fff7cc}
-.li .st{font-size:13px;text-align:center}.li .pos{color:var(--muted);font-size:12px}
-.filters{display:flex;gap:6px;margin:4px 0 8px;flex-wrap:wrap}
-.filters button{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 10px;font-size:12px}
-.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.eh h4{margin:14px 0 6px;font-size:13px;display:flex;justify-content:space-between}
-.eh .k{display:grid;grid-template-columns:1fr 64px 34px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--soft);font-size:13px}
-.eh .k input{width:64px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:right;font:inherit}
-.eh .k input.bad{border-color:var(--red);background:#fbeaea}
-.eh .hint{grid-column:1/-1;font-size:11.5px;color:var(--muted);margin-top:-2px}
-.asp{grid-column:1/-1;margin:2px 0 4px 6px;font-size:12px}.asum{color:var(--muted);margin-bottom:3px}
+.note{font-size:12.5px;color:var(--muted);line-height:1.5}
+kbd{font:600 11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:#fff;color:var(--ink)}
+
+/* Prüfen */
+.pstat{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.pstat .pb{flex:1;height:7px;border-radius:99px;background:var(--soft2);overflow:hidden}
+.pstat .pb i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .25s}
+.pstat.done .pb i{background:var(--ok)}
+.pstat span{font-size:12.5px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ehead{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ehead .lbig{font:650 19px/1.25 var(--f-head);color:var(--red);word-break:break-word}
+.ehead .nr{font-size:12px;color:var(--muted);white-space:nowrap;padding-top:4px}
+.decide{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 4px}
+.decide .btn{padding:10px 8px}
+.decide .btn.cur{box-shadow:inset 0 0 0 2px rgba(255,255,255,.55)}
+.decide .btn.dim{opacity:.55}
+details.edit{border-top:1px solid var(--line);margin-top:12px;padding-top:4px}
+details.edit summary,details.more summary,details.kb summary,details.info summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--accent-ink);padding:8px 0}
+details.edit summary::-webkit-details-marker,details.more summary::-webkit-details-marker,details.kb summary::-webkit-details-marker,details.info summary::-webkit-details-marker{display:none}
+details summary .chev{width:15px;height:15px;transition:transform .15s}
+details:not(.menu)[open]>summary .chev{transform:rotate(90deg)}
+.navrow{display:flex;justify-content:space-between;gap:8px;margin-top:10px}
+.orig{font-size:12.5px;color:var(--muted);background:var(--soft);border-radius:var(--r-s);padding:6px 9px;margin-bottom:8px}
+.filters{display:flex;gap:6px;margin:4px 0 10px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 11px;font-size:12.5px;color:var(--ink)}
+.filters button b{font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.filters button.on{background:var(--ink);color:#fff;border-color:var(--ink)}.filters button.on b{color:#c8cfdb}
+.list{margin-top:2px}
+.lgrp{font-size:11.5px;font-weight:650;color:var(--muted);padding:10px 4px 4px;border-bottom:1px solid var(--line)}
+.li{display:grid;grid-template-columns:22px 44px 1fr auto;gap:6px;align-items:center;padding:7px 6px;border-bottom:1px solid var(--soft);cursor:pointer;font-size:13.5px;border-radius:6px}
+.li:hover{background:var(--soft)} .li.on{background:#fff6c7}
+.li .st{display:flex;align-items:center;justify-content:center}
+.li .st .i{width:17px;height:17px}
+.li .st .o{width:11px;height:11px;border-radius:50%;border:2px solid var(--red);opacity:.6}
+.li .st .o.u{border-color:var(--amber);opacity:1}.li .st .o.e{border-color:var(--violet);opacity:1}
+.li.s-rej span:nth-child(3){color:var(--grey);text-decoration:line-through}
+.li .pos{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.ok-c{color:var(--ok)}.rej-c{color:var(--grey)}
+.doneCard{text-align:center;padding:20px 16px;background:var(--ok-soft);border-color:#b8dfc9}
+.doneCard .big{width:44px;height:44px;color:var(--ok);stroke-width:2.2}
+.doneCard h3{margin:6px 0 4px}
+.kbgrid{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;font-size:12.5px;color:var(--muted);padding:2px 0 6px}
+
+/* Bewertung */
+.eh .intro{margin:0 0 6px}
+details.blk{border:1px solid var(--line);border-radius:var(--r-m);margin:0 0 10px;background:#fff}
+details.blk>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:11px 12px;font:650 14px/1.3 var(--f-head)}
+details.blk>summary::-webkit-details-marker{display:none}
+details.blk>summary .ts{margin-left:auto;font:600 13px var(--f-ui);font-variant-numeric:tabular-nums}
+details.blk>summary .miss{font:500 11.5px var(--f-ui);color:var(--amber);background:var(--amber-soft);border-radius:999px;padding:1px 8px}
+details.blk>summary .miss.ok{color:#145e3c;background:var(--ok-soft)}
+details.blk .bb{padding:0 12px 8px}
+.eh .k{display:grid;grid-template-columns:1fr 64px 34px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--soft);font-size:13.5px}
+.eh .k input{width:64px;padding:6px 7px;text-align:right;font-variant-numeric:tabular-nums}
+.eh .k input:placeholder-shown{background:var(--soft)}
+.eh .k input.bad{border-color:var(--danger);background:var(--danger-soft)}
+.eh .k>span:nth-child(3){color:var(--muted);font-variant-numeric:tabular-nums}
+.eh .hint{grid-column:1/-1;font-size:12px;color:var(--muted);margin-top:-2px}
+.asp{grid-column:1/-1;margin:2px 0 4px 6px;font-size:12.5px}.asum{color:var(--muted);margin-bottom:3px}
 .ar{display:grid;grid-template-columns:28px 1fr;gap:4px;padding:2px 4px;border-radius:5px}.ar[data-jump]{cursor:pointer}.ar[data-jump]:hover{background:var(--soft)}
 .ar b{color:var(--red)}.ar.no{color:var(--grey)}.ar.no b{color:var(--grey)}.ar.vo span{color:var(--muted)}.ar i{font-style:italic;color:var(--muted)}
-.sum{position:sticky;bottom:-14px;background:#fff;border-top:1px solid var(--line);padding:10px 0;margin-top:10px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
-.sum div{font-size:11px;color:var(--muted)}.sum b{display:block;font-size:17px;color:var(--ink)}
-.hbar{display:grid;grid-template-columns:1fr 120px 26px;gap:8px;align-items:center;font-size:13px;margin:4px 0}
-.hbar .t{height:8px;background:var(--soft);border-radius:4px;overflow:hidden}.hbar .t i{display:block;height:100%;background:var(--red)}
-.note{font-size:12px;color:var(--muted);line-height:1.45}
+.sum{position:sticky;bottom:-16px;background:#fff;border:1px solid var(--line);border-radius:var(--r-m);box-shadow:0 -6px 16px rgba(30,41,64,.06);padding:10px 4px;margin:14px 0 0;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}
+.sum div{font-size:11.5px;color:var(--muted)}.sum b{display:block;font:650 18px/1.3 var(--f-head);color:var(--ink);font-variant-numeric:tabular-nums}
+.sum div:last-child b{color:var(--accent-ink)}
+
+/* Förderung */
+.hbar{display:grid;grid-template-columns:1fr 120px 26px;gap:8px;align-items:center;font-size:13px;margin:5px 0}
+.hbar .t{height:8px;background:var(--soft2);border-radius:4px;overflow:hidden}.hbar .t i{display:block;height:100%;background:var(--red);opacity:.8}
+.hbar b{text-align:right;font-variant-numeric:tabular-nums}
 .fl{margin:8px 0 10px;border-top:1px solid var(--line)}
-.fr{display:grid;grid-template-columns:1fr auto 34px;gap:8px;align-items:center;padding:7px 2px;border-bottom:1px solid var(--soft);font-size:13px}
-.chips{display:flex;gap:4px}.chip{border:1px solid var(--line);background:#fff;border-radius:14px;padding:3px 9px;font-size:11.5px;color:var(--muted)}
-.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}.chip.reco{box-shadow:0 0 0 2px #2e9d63}
-details.more summary{cursor:pointer;font-size:12.5px;color:var(--accent);margin:6px 0}
-.fr small{display:block;color:var(--muted);font-size:11.5px}
-.chk{font-size:12.5px;display:flex;gap:6px;align-items:center}
-kbd{font:11px ui-monospace,Menlo,monospace;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 4px;background:#fff}
-#printSummary{display:none}
+.fr{display:grid;grid-template-columns:1fr auto 30px;gap:8px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--soft);font-size:13.5px}
+.fr small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.fr .cnt{font-size:12.5px;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:4px}
+.chip{position:relative;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 10px;font-size:12px;color:var(--ink)}
+.chip:hover{background:var(--soft)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chip.reco::after{content:"★";position:absolute;top:-7px;right:-4px;font-size:11px;color:#c58a00;background:#fff;border-radius:50%;width:15px;height:15px;line-height:15px;text-align:center;box-shadow:0 0 0 1px var(--line)}
+.recohint{display:inline-flex;align-items:center;gap:4px}.recohint::before{content:"★";color:#c58a00}
+.chk{font-size:13px;display:flex;gap:8px;align-items:center;cursor:pointer}.chk input{accent-color:var(--accent);width:16px;height:16px;margin:0}
+
+/* Start */
 body:not(.loaded) .nd{display:none}
 body.noinhalt .lay,body.noinhalt [data-own="haken"],body.noinhalt [data-own="rand"]{display:none}
-#start{display:none;position:fixed;inset:58px 0 0 0;background:var(--bg);z-index:30;align-items:center;justify-content:center}
-#start .drop{background:#fff;border:2px dashed var(--line);border-radius:16px;padding:40px 48px;text-align:center;max-width:560px}
-#start .drop.over{border-color:var(--accent);background:#f3f6fb}
-#start h2{margin:0 0 10px;font-size:20px}#start p{margin:10px 0}#start .small{font-size:12px}
-#start .err{color:var(--red);font-size:13px;min-height:1em}
-.tool.pri{background:var(--accent);border-color:var(--accent);color:#fff}
-.menu{position:relative}.menu summary{list-style:none}.menu summary::-webkit-details-marker{display:none}
-.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.12);padding:6px;z-index:20;min-width:210px}
-.menu .pop button{display:block;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:6px}
-.menu .pop button:hover{background:var(--soft)}
-.menu .pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
-#resetCode,#resetAll{color:var(--red)}
-.codes{align-items:center}
-.codes .nav{border:1px solid var(--line);background:#fff;border-radius:8px;width:30px;min-width:0;height:34px;font-size:18px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center}
-.codes .nav:disabled{opacity:.35;cursor:default}
-.codes .cbox{display:flex;flex-direction:column;gap:3px;width:230px}
-.codes .cbox small{font-size:11px;color:var(--muted)}
-.codes select{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font:inherit;font-weight:600;background:#fff}
-#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;max-width:560px;display:none;z-index:50;box-shadow:0 6px 24px rgba(0,0,0,.2)}
-#fatal{display:none;position:fixed;inset:0;background:rgba(236,238,241,.97);z-index:60;align-items:center;justify-content:center}
+#printSummary{display:none}
+#start{display:none;position:fixed;inset:58px 0 0 0;background:var(--bg);z-index:30;align-items:center;justify-content:center;overflow:auto;padding:24px}
+#start .drop{background:#fff;border:2px dashed transparent;border-radius:22px;padding:38px 44px 30px;text-align:center;max-width:660px;box-shadow:0 1px 2px rgba(30,41,64,.08),0 18px 48px rgba(30,41,64,.1);transition:border-color .15s,background .15s}
+#start .drop.over{border-color:var(--accent);background:#f5f8ff}
+#start .hero{width:76px;height:76px;margin:0 auto 8px;display:block}
+#start h2{margin:0 0 8px;font:650 25px/1.2 var(--f-head)}
+#start p{margin:10px auto;max-width:460px}
+#start .lead{font-size:15px;color:var(--ink)}
+#start .small{font-size:12px}
+#start .err{color:var(--danger);font-size:13px;min-height:1em}
+.steps{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0;margin:22px 0 6px;text-align:left;counter-reset:s}
+.steps li{counter-increment:s;background:var(--soft);border-radius:var(--r-m);padding:12px 12px 12px 42px;position:relative;font-size:12.5px;color:var(--muted);line-height:1.4}
+.steps li::before{content:counter(s);position:absolute;left:12px;top:11px;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font:700 12px/22px var(--f-ui);text-align:center}
+.steps b{display:block;color:var(--ink);font-size:13.5px;margin-bottom:2px}
+.recent{margin:18px 0 0;text-align:left}
+.recent h4{font:600 12.5px var(--f-ui);color:var(--muted);margin:0 0 6px}
+.recent .rc{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:var(--r-s);background:var(--soft);margin-bottom:5px;font-size:13px}
+.recent .rc span{color:var(--muted);white-space:nowrap}
+
+/* Meldungen */
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--r-m);font-size:13.5px;max-width:560px;display:none;z-index:50;box-shadow:var(--pop)}
+#fatal{display:none;position:fixed;inset:0;background:rgba(231,236,243,.97);z-index:60;align-items:center;justify-content:center}
 #fatal .card{max-width:520px}
+
 /* ---------- Touch & Stift ---------- */
 #viewer{-webkit-user-select:none;user-select:none}
 .page{touch-action:pan-x pan-y}
 #viewer.fdraw .page{touch-action:none}
 .page img,.page svg{-webkit-touch-callout:none}
-.vbar{flex-wrap:wrap;row-gap:6px;column-gap:12px}
-.vbar input[type=range]{width:90px}
-.tools{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
-.tools button{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 10px;font-size:13px;color:var(--ink)}
-.tools button.on{background:var(--red);border-color:var(--red);color:#fff}
-.tools button[data-m=""].on{background:var(--ink);border-color:var(--ink)}
-.tools button:disabled{opacity:.4;cursor:default}
-.tools .fd{display:flex;gap:4px;align-items:center;margin-left:4px}
 body.noinhalt #ownMenu{display:none}
 svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
 #viewer.erase svg.ov{cursor:cell}
-.qpop{position:absolute;z-index:4;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.18);padding:8px;width:min(330px,90vw);font-size:13px}
-.qpop .qlab{font-weight:650;color:var(--red);margin:0 2px 2px;font-size:16px}
-.qpop .qmeta{font-size:11.5px;color:var(--muted);margin:0 2px}
-.qpop .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
-.qpop button{flex:0 0 auto;white-space:nowrap;border:1px solid var(--line);background:var(--soft);border-radius:8px;padding:7px 12px;min-width:44px;font-size:14px}
+.qpop{position:absolute;z-index:4;background:#fff;border:1px solid var(--line);border-radius:var(--r-l);box-shadow:var(--pop);padding:10px;width:min(330px,90vw);font-size:13px}
+.qpop .qlab{font:650 17px/1.25 var(--f-head);color:var(--red);margin:0 2px 2px}
+.qpop .qmeta{font-size:12px;color:var(--muted);margin:0 2px}
+.qpop .qrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.qpop button{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:var(--r-s);padding:7px 12px;min-width:44px;font-size:14px;font-weight:500}
+.qpop button:hover{background:var(--soft)}
 .qpop button.qa{background:var(--ok);border-color:var(--ok);color:#fff;flex:1 0 auto}
-.qpop button.qr{color:var(--red);border-color:#e3b9b9;background:#fff;flex:1 0 auto}
-.qpop button.on{background:var(--red);border-color:var(--red);color:#fff}
-.qpop .signs button{padding:6px 0;min-width:44px}
-.qpop input{margin-top:7px}
-.qpad{margin-top:7px;border:1px solid var(--line);border-radius:8px;position:relative;
+.qpop button.qa:hover{filter:brightness(.94)}
+.qpop button.qr{color:var(--danger);border-color:#f0c4c0;background:#fff;flex:1 0 auto}
+.qpop button.qr:hover{background:var(--danger-soft)}
+.qpop button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.qpop .signs{margin:8px 0 0}
+.qpop .signs button{padding:6px 0;min-width:44px;font-weight:600}
+.qpop input{margin-top:8px}
+.qpad{margin-top:8px;border:1px solid var(--line);border-radius:var(--r-s);position:relative;
   background:linear-gradient(transparent 61px,#c9d3e3 61px,#c9d3e3 62px,transparent 62px) #fffdf6}
 .qpad canvas{display:block;width:100%;height:90px;touch-action:none;cursor:crosshair}
 .qpad .qph{position:absolute;left:8px;top:5px;font-size:11.5px;color:var(--muted);pointer-events:none}
 .mk path.cink{fill:none;stroke:var(--red);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .mk.rej path.cink{stroke:var(--grey)}
 @media (any-pointer:coarse){
+  .tools .fd{display:inline-flex}
   .tool,.btn{min-height:44px}
-  .tools button{min-height:38px;padding:4px 10px}
-  .signs button{min-height:40px;min-width:44px}
-  .li{padding:11px 4px}
-  .filters button,.chip{padding:7px 12px}
+  .seg button{min-height:40px;padding:6px 12px}
+  .tools .ibtn{min-height:44px;min-width:44px;justify-content:center}
+  .signs button{min-height:42px;min-width:46px}
+  .li{padding:12px 6px}
+  .filters button,.chip{padding:8px 13px}
   .mk line.hit{stroke-width:44}
-  .codes .nav{height:44px;width:40px}
-  .codes select{min-height:40px}
+  .codes .nav{height:42px;width:42px}
+  .cchip{padding:8px 13px 8px 8px}
+  .zoomctl button{width:40px;height:38px}
   .menu .pop button{padding:12px 10px}
   .qpop button{padding:10px 12px}
+  .toggle2 button{padding:9px 14px}
 }
-@media (max-width:1180px){ aside{width:340px} header .sub,.legend{display:none} .codes .cbox{width:190px} }
+@media (max-width:1180px){
+  aside{width:350px}
+  header .sub,.codes .csum{display:none}
+  .seg .tl{display:none}
+  .seg button{padding:7px 10px}
+}
 @media (max-width:900px){
-  header{flex-wrap:wrap;height:auto;padding:6px 10px;gap:8px}
+  header{gap:8px;padding:0 8px}
+  header h1{max-width:150px;font-size:14px}
+  .brand .logo{width:28px;height:28px}
+  .codes .strip{max-width:none;flex:1 1 auto;min-width:0}
+  .codes{flex:1 1 0;min-width:0}
+  .spacer{display:none}
+  .hide-s{display:none}
+  .saved{min-width:0}.saved .st{display:none}
   main{flex-direction:column}
-  aside{width:auto;height:42vh;border-left:0;border-top:1px solid var(--line)}
-  #viewer{padding:0 8px 40px}
+  #viewer{padding:0 8px 24px}
+  aside{width:auto;height:38vh;border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;box-shadow:0 -8px 24px rgba(30,41,64,.1);transition:height .2s ease;margin-top:-10px;z-index:6}
+  aside.open{height:72vh}
+  aside.min{height:96px}
+  .grab{display:block;border:0;background:none;height:18px;width:100%;padding:0;flex:none}
+  .grab::before{content:"";display:block;width:44px;height:5px;border-radius:99px;background:#c4ccd8;margin:8px auto 0}
+  .tabs{padding-top:0}
 }
+@media (min-width:901px){aside{height:auto!important}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media print{
   @page{size:A4;margin:0}
   html,body{background:#fff;height:auto}
   body{display:block}
   .qpop{display:none!important}
-  header,aside,.page .lbl,.vbar{display:none!important}
+  header,aside,.page .lbl,.vbar,#icons{display:none!important}
   main{display:block;height:auto}
   #viewer{padding:0;overflow:visible}
-  .page{width:210mm!important;height:297mm;margin:0;box-shadow:none;page-break-after:always;break-after:page}
+  .page{width:210mm!important;height:297mm;margin:0;box-shadow:none;border-radius:0;page-break-after:always;break-after:page}
   .mk.open,.mk.rej{display:none}
   .mk rect.sel{display:none!important}
   #printSummary{display:block;padding:18mm 18mm;font-size:11pt}
@@ -232,27 +404,75 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
 </style>
 </head>
 <body>
+<svg id="icons" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-select" viewBox="0 0 24 24"><path d="M6 3.5l12.5 7-5.6 1.6-2.4 5.4z"/><path d="M13 12.2l4.5 5.3"/></symbol>
+  <symbol id="i-underline" viewBox="0 0 24 24"><path d="M7 4v6a5 5 0 0 0 10 0V4"/><path d="M4.5 20.5h15"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M15.5 4.5l4 4L9 19H5v-4z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-eraser" viewBox="0 0 24 24"><path d="M4.5 15.5l9.5-9.5 5.5 5.5-8 8H8.5z"/><path d="M9 11l5.5 5.5"/><path d="M12 19.5h8"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14.5L4.5 10 9 5.5"/><path d="M4.5 10h10a5.5 5.5 0 0 1 0 11H11"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M6.5 3h7.5l5 5v13h-12.5z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-open" viewBox="0 0 24 24"><path d="M3.5 7.5V18a1.5 1.5 0 0 0 1.5 1.5h14a1.5 1.5 0 0 0 1.5-1.5V9.5A1.5 1.5 0 0 0 19 8h-7l-2-2.5H5A1.5 1.5 0 0 0 3.5 7z"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 4v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M5 19.5h14"/></symbol>
+  <symbol id="i-load" viewBox="0 0 24 24"><path d="M12 15.5v-11"/><path d="M7.5 9L12 4.5 16.5 9"/><path d="M5 19.5h14"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/></symbol>
+  <symbol id="i-pdf" viewBox="0 0 24 24"><path d="M6.5 3h7.5l5 5v6"/><path d="M6.5 3v18h6"/><path d="M14 3v5h5"/><path d="M18 16v5.5"/><path d="M15.5 19l2.5 2.5 2.5-2.5"/></symbol>
+  <symbol id="i-print" viewBox="0 0 24 24"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="1.5"/><path d="M7 14h10v6.5H7z"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M6 12h12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></symbol>
+  <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 4l9 16H3z"/><path d="M12 10v4.5M12 17.2v.3"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 24 24"><path d="M4 18.5c3-1 5-1 8 0s5 1 8 0"/><path d="M12 15V4.5M8.5 8l3.5-3.5L15.5 8"/></symbol>
+  <symbol id="logo" viewBox="0 0 40 40"><rect x="6" y="3.5" width="25" height="33" rx="3.5" fill="#fff" stroke="#c7d1e0" stroke-width="1.6"/><path d="M11 12h15M11 17.5h15M11 23h11M11 28.5h8" stroke="#b9c9e6" stroke-width="1.6" stroke-linecap="round"/><path d="M24.5 3.5v33" stroke="#efb1b1" stroke-width="1.4"/><path d="M17.5 24.5l5.5 5.5 12-15" fill="none" stroke="#8f1010" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
 <header>
-  <div><h1>Korrektur-Arbeitsfläche</h1><div class="sub" id="ktitle"></div></div>
-  <div class="codes" id="codes"></div>
+  <div class="brand"><svg class="logo"><use href="#logo"/></svg><div><h1 id="ktitleMain">Korrektur-Arbeitsfläche</h1><div class="sub" id="ktitle"></div></div></div>
+  <div class="codes nd" id="codes"></div>
   <div class="spacer"></div>
-  <span class="saved" id="saved"></span>
-  <button class="tool" id="openBtn" title="Vorkorrektur-PDF öffnen">Datei öffnen</button>
-  <input type="file" id="openFile" accept=".pdf,application/pdf" multiple hidden>
+  <span class="saved nd" id="saved" role="status"></span>
   <details class="menu nd" id="ownMenu"><summary class="tool" id="ownBtn">✎ Anstreichen ▾</summary>
     <div class="pop"><button data-own="sprache">Sprache: Wort unterstreichen <kbd>E</kbd></button><button data-own="haken">Inhalt: Haken im Text <kbd>H</kbd></button><button data-own="rand">Inhalt: Randstrich ziehen <kbd>R</kbd></button></div></details>
-  <details class="menu nd" id="standMenu"><summary class="tool">Korrekturstand ▾</summary>
-    <div class="pop"><button id="exportBtn">Als Datei sichern …</button><button id="importBtn">Aus Datei laden …</button><hr>
-    <button id="resetCode">Diesen Code zurücksetzen</button><button id="resetAll">Ganze Klausur zurücksetzen</button></div></details>
-  <details class="menu nd" id="pdfMenu"><summary class="tool pri">PDF exportieren</summary>
-    <div class="pop"><button id="pdfOne">Dieser Code</button><button id="pdfAll">Alle Codes (eine Datei)</button><button id="printBtn">Drucken …</button></div></details>
+  <details class="menu nd" id="standMenu"><summary class="tool" title="Datei und Korrekturstand"><svg class="i"><use href="#i-file"/></svg><span class="hide-s">Datei</span><svg class="i chev"><use href="#i-down"/></svg></summary>
+    <div class="pop"><button id="openBtn" title="Vorkorrektur-PDF öffnen"><svg class="i"><use href="#i-open"/></svg>Vorkorrektur-PDF öffnen …</button><hr>
+    <div class="ph">Korrekturstand</div>
+    <button id="exportBtn"><svg class="i"><use href="#i-save"/></svg>Als Datei sichern …</button><button id="importBtn"><svg class="i"><use href="#i-load"/></svg>Aus Datei laden …</button>
+    <div class="danger"><div class="ph">Zurücksetzen (nicht rückgängig zu machen)</div>
+    <button id="resetCode"><svg class="i"><use href="#i-reset"/></svg>Diesen Code zurücksetzen</button><button id="resetAll"><svg class="i"><use href="#i-reset"/></svg>Ganze Klausur zurücksetzen</button></div></div></details>
+  <details class="menu nd" id="pdfMenu"><summary class="tool pri"><svg class="i"><use href="#i-pdf"/></svg><span class="hide-s">PDF exportieren</span><span class="sr">PDF exportieren</span></summary>
+    <div class="pop"><button id="pdfOne"><svg class="i"><use href="#i-pdf"/></svg>Dieser Code</button><button id="pdfAll"><svg class="i"><use href="#i-pdf"/></svg>Alle Codes (eine Datei)</button><hr><button id="printBtn"><svg class="i"><use href="#i-print"/></svg>Drucken …</button></div></details>
+  <input type="file" id="openFile" accept=".pdf,application/pdf" multiple hidden>
   <input type="file" id="importFile" accept=".json" hidden>
 </header>
 <main>
-  <div id="viewer"><div class="vbar"><span class="tools nd" id="tools"><button data-m="" class="on" title="Auswählen: Vorschlag antippen (Esc)">☝ Auswählen</button><button data-m="sprache" title="Wort unterstreichen, dann Zeichen antippen (E)">▁ Unterstreichen</button><button data-m="ink" title="Freihand schreiben (F)">✎ Freihand</button><button data-m="erase" title="Freihand-Striche löschen">⌫ Radierer</button><button id="undoBtn" title="Freihand rückgängig (Strg+Z)" disabled>↶</button><label class="fd" title="Ohne Stift: Finger zeichnet statt zu scrollen"><input type="checkbox" id="finger"> Finger zeichnet</label></span><span class="lay">Anzeigen: <label><input type="checkbox" id="showS" checked> Sprache</label><label><input type="checkbox" id="showI" checked> Inhalt</label></span><label><input type="checkbox" id="showRej"> Verworfene</label><label>Zoom <input type="range" id="zoom" min="40" max="200" value="80"></label><span class="legend"><i class="lo"></i>offener Vorschlag <i class="lu"></i>Lesung unsicher <i class="la"></i>angenommen / eigene</span></div><div id="pages"></div></div>
-  <aside>
-    <div class="tabs"><button data-t="pruefen" class="on">Prüfen</button><button data-t="bewertung">Bewertung</button><button data-t="fehlerbild">Förderung</button></div>
+  <div id="viewer"><div class="vbar">
+    <span class="tools nd" id="tools">
+      <span class="seg" role="toolbar" aria-label="Werkzeuge">
+        <button data-m="" class="on" title="Auswählen: Vorschlag antippen (Esc)"><svg class="i"><use href="#i-select"/></svg><span class="tl">Auswählen</span></button><button data-m="sprache" title="Wort unterstreichen, dann Zeichen antippen (E)"><svg class="i"><use href="#i-underline"/></svg><span class="tl">Unterstreichen</span></button><button data-m="ink" title="Freihand schreiben (F)"><svg class="i"><use href="#i-pen"/></svg><span class="tl">Freihand</span></button><button data-m="erase" title="Freihand-Striche löschen"><svg class="i"><use href="#i-eraser"/></svg><span class="tl">Radierer</span></button>
+      </span>
+      <button class="ibtn" id="undoBtn" title="Freihand rückgängig (Strg+Z)" disabled><svg class="i"><use href="#i-undo"/></svg><span class="sr">Rückgängig</span></button>
+      <label class="fd" title="Ohne Stift: Finger zeichnet statt zu scrollen"><input type="checkbox" id="finger"> Finger zeichnet</label>
+    </span>
+    <span class="vright nd">
+      <span class="zoomctl" title="Zoom (auch mit zwei Fingern)"><button id="zOut" aria-label="Verkleinern"><svg class="i"><use href="#i-minus"/></svg></button><span id="zVal">80 %</span><button id="zIn" aria-label="Vergrößern"><svg class="i"><use href="#i-plus"/></svg></button><input type="range" class="sr" id="zoom" min="40" max="200" value="80" tabindex="-1" aria-hidden="true"></span>
+      <details class="menu vmenu" id="viewMenu"><summary class="tool" title="Ansicht und Legende"><svg class="i"><use href="#i-eye"/></svg><span class="hide-s">Ansicht</span></summary>
+        <div class="pop">
+          <span class="lay"><label><input type="checkbox" id="showS" checked> Sprachliche Anstreichungen</label><label><input type="checkbox" id="showI" checked> Inhaltliche Anmerkungen</label></span>
+          <label><input type="checkbox" id="showRej"> Verworfene Vorschläge zeigen</label>
+          <hr>
+          <div class="legend"><i class="lo"></i><span>offener Vorschlag</span><i class="lu"></i><span>offen, Lesung unsicher</span><i class="le"></i><span>offen, Ermessensfrage</span><i class="la"></i><span>angenommen oder eigene</span><i class="lr"></i><span>verworfen</span></div>
+        </div></details>
+    </span>
+  </div><div id="pages"></div></div>
+  <aside id="side">
+    <button class="grab" id="grab" aria-label="Seitenleiste vergrößern oder verkleinern"></button>
+    <div class="tabs"><button data-t="pruefen" class="on">Prüfen <span class="tc" id="tcP"></span></button><button data-t="bewertung">Bewertung <span class="tc" id="tcB"></span></button><button data-t="fehlerbild">Förderung</button></div>
     <div class="pane on" id="pane-pruefen">
+      <div id="pstat"></div>
       <div id="editor"></div>
       <div class="filters" id="filters"></div>
       <div class="list" id="list"></div>
@@ -264,11 +484,14 @@ svg path.ink{fill:none;stroke:var(--red);stroke-width:3;stroke-linecap:round;str
 <div id="printSummary"></div>
 <div id="toast" role="status"></div>
 <div id="start"><div class="drop" id="drop">
-  <h2>Korrektur-Arbeitsfläche</h2>
-  <p>Öffne die <b>Vorkorrektur-PDF</b>, die Claude für deinen Kurs erstellt hat.<br>Du kannst auch mehrere Dateien derselben Klausur auf einmal wählen.</p>
-  <button class="btn pri" id="startOpen">Vorkorrektur-PDF öffnen …</button>
-  <p class="note">oder Datei hierher ziehen</p>
-  <p class="note small">Die Datei wird nur in diesem Browser gelesen. Es wird nichts hochgeladen.<br>Dein Korrekturstand wird pro Klausur im Browser gespeichert; „Stand sichern“ legt zusätzlich eine Sicherungsdatei an.</p>
+  <svg class="hero"><use href="#logo"/></svg>
+  <h2>Klausuren korrigieren</h2>
+  <p class="lead">Öffne die Vorkorrektur-PDF deines Kurses. Du prüfst jeden Vorschlag, ergänzt eigene Anstreichungen und vergibst die Punkte selbst.</p>
+  <p><button class="btn pri big" id="startOpen"><svg class="i"><use href="#i-open"/></svg>Vorkorrektur-PDF öffnen …</button></p>
+  <p class="note">oder Datei hierher ziehen. Mehrere Dateien derselben Klausur gehen auch.</p>
+  <ol class="steps"><li><b>Prüfen</b>Vorschläge annehmen, ändern oder verwerfen</li><li><b>Bewerten</b>Punkte nach Erwartungshorizont eintragen</li><li><b>Exportieren</b>korrigiertes PDF mit Förderblatt</li></ol>
+  <div class="recent" id="recent"></div>
+  <p class="note small">Die Datei wird nur in diesem Browser gelesen, es wird nichts hochgeladen. Dein Korrekturstand wird pro Klausur im Browser gespeichert. Über „Datei → Als Datei sichern“ legst du zusätzlich eine Sicherung an.</p>
   <p class="err" id="startErr"></p>
   <div class="alt"><p><b>Neue Klausur aus dem Scan vorbereiten</b><br><span class="note small">Abschrift und Fehlerliste kommen aus AIS.chat.</span></p><button class="btn" id="startPrep">Mit AIS.chat vorbereiten …</button></div>
 </div></div>
@@ -333,8 +556,10 @@ function normalize(s){
   return s;
 }
 function load(){ try { return normalize(JSON.parse(localStorage.getItem(STORE))); } catch(e){ return null; } }
-function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); $('#saved').textContent = 'automatisch gesichert ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}); }
-  catch(e){ $('#saved').textContent = 'nicht gesichert – bitte „Stand sichern“'; } }
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(S)); setSaved(true); } catch(e){ setSaved(false); } }
+function setSaved(ok, txt){ const el = $('#saved'); el.classList.toggle('bad', !ok);
+  el.innerHTML = ok ? `<svg class="i"><use href="#i-check"/></svg><span class="st">${txt || 'Gespeichert ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span>`
+                    : `<svg class="i"><use href="#i-warn"/></svg><span>Nicht gespeichert – bitte „Datei → Als Datei sichern“</span>`; }
 function log(id, action, before, after){ S.log.push({ t:new Date().toISOString(), code:cur.code, id, action, before, after }); }
 
 const codeData = () => D.codes.find(c => c.code === cur.code);
@@ -367,7 +592,7 @@ function renderPages(){
   });
   applyZoom(); drawMarks();
 }
-function applyZoom(){ document.querySelectorAll('.page').forEach(p => p.style.width = (9.5 * $('#zoom').value) + 'px'); }
+function applyZoom(){ document.querySelectorAll('.page').forEach(p => p.style.width = (9.5 * $('#zoom').value) + 'px'); $('#zVal').textContent = $('#zoom').value + ' %'; }
 
 function inhaltLayout(p, its){
   const haken = [], rand = [], occ = []; let last = -1;
@@ -440,7 +665,7 @@ function drawMarks(){
     const { notes, nums, leaders } = layout(p, its, IL.occ);
     let html = leaders.map(l => `<line class="lead" x1="${l.x1}" y1="${l.y1}" x2="${l.x2}" y2="${l.y2}"/>`).join('');
     its.forEach(it => {
-      const cls = 'mk ' + it.status + (it.status==='open' && it.conf==='unsicher' ? ' uns' : '') + (cur.sel===it.id ? ' selected' : '');
+      const cls = 'mk ' + it.status + (it.status==='open' && it.conf==='unsicher' ? ' uns' : '') + (it.status==='open' && it.conf==='ermessen' ? ' erm' : '') + (cur.sel===it.id ? ' selected' : '');
       let g = `<g class="${cls}" data-id="${it.id}">`;
       const ns = notes[it.id] || [], num = nums[it.id];
       it.segs.forEach(s => { g += `<rect class="sel" x="${s[0]-4}" y="${s[2]-34}" width="${s[1]-s[0]+8}" height="42" rx="4"/>`; });
@@ -473,48 +698,86 @@ function wrap(t, w){ const ws = t.split(' '), out = []; let c = '';
 
 // ---------- Kopf ----------
 function renderCodes(){
-  $('#ktitle').textContent = D.klausur.titel + ' · ' + D.klausur.datum;
+  $('#ktitleMain').textContent = D.klausur.titel; $('#ktitle').textContent = 'Korrektur-Arbeitsfläche · ' + D.klausur.datum;
   const st = D.codes.map(c => { const its = items(c.code).filter(i => i.src==='claude'); return { c: c.code, n: its.length, d: its.filter(i => i.status!=='open').length }; });
   const me = st.find(x => x.c === cur.code), i = D.codes.findIndex(c => c.code === cur.code);
-  const fertig = st.filter(x => x.d === x.n).length;
-  $('#codes').innerHTML = `<button class="nav" data-step="-1" ${i <= 0 ? 'disabled' : ''} title="Vorheriger Code">‹</button>
-    <div class="cbox"><select id="codeSel">${st.map(x => `<option value="${x.c}" ${x.c===cur.code?'selected':''}>Code ${esc(x.c)}  ·  ${x.d} / ${x.n} geprüft${x.d===x.n?'  ✓':''}</option>`).join('')}</select>
-    <span class="bar"><i style="width:${me.n ? 100*me.d/me.n : 0}%"></i></span><small>${fertig} von ${st.length} Klausuren fertig geprüft</small></div>
-    <button class="nav" data-step="1" ${i >= D.codes.length - 1 ? 'disabled' : ''} title="Nächster Code">›</button>`;
+  const fertig = st.filter(x => x.d === x.n).length, C = 2 * Math.PI * 6.2;
+  const ring = x => `<svg class="ring" viewBox="0 0 18 18"><circle class="bg" cx="9" cy="9" r="6.2"/><circle class="fg" cx="9" cy="9" r="6.2" stroke-dasharray="${((x.n ? x.d / x.n : 0) * C).toFixed(1)} ${C.toFixed(1)}"/></svg>`;
+  const old = $('#strip'), sl = old ? old.scrollLeft : 0;
+  $('#codes').innerHTML = `<button class="nav" data-step="-1" ${i <= 0 ? 'disabled' : ''} title="Vorheriger Code" aria-label="Vorheriger Code"><svg class="i"><use href="#i-left"/></svg></button>
+    <div class="strip" id="strip">${st.map(x => `<button class="cchip${x.c===cur.code?' on':''}${x.d===x.n?' done':''}" data-code="${esc(x.c)}" title="Code ${esc(x.c)}: ${x.d} von ${x.n} Vorschlägen entschieden">${x.d===x.n ? '<svg class="i" style="width:16px;height:16px"><use href="#i-check"/></svg>' : ring(x)}${esc(x.c)}</button>`).join('')}</div>
+    <button class="nav" data-step="1" ${i >= D.codes.length - 1 ? 'disabled' : ''} title="Nächster Code" aria-label="Nächster Code"><svg class="i"><use href="#i-right"/></svg></button>
+    <span class="csum">${fertig} von ${st.length} fertig</span>`;
+  const sp = $('#strip'), on = sp.querySelector('.on'); sp.scrollLeft = sl;
+  if (on){ const l = on.offsetLeft - sp.offsetLeft; if (l < sp.scrollLeft || l + on.offsetWidth > sp.scrollLeft + sp.clientWidth) sp.scrollLeft = l - sp.clientWidth / 2 + on.offsetWidth / 2; }
+  const open = me.n - me.d, tc = $('#tcP'); tc.textContent = me.n ? (open || '✓') : ''; tc.className = 'tc ' + (open ? 'hot' : 'ok');
+  remember(fertig, st.length);
 }
+// Zuletzt bearbeitete Klausuren (nur Titel und Fortschritt, für den Startbildschirm)
+const RECENT = 'korrektur-ws-recent';
+function remember(f, n){ try { let r = JSON.parse(localStorage.getItem(RECENT) || '[]'); if (!Array.isArray(r)) r = [];
+  const prev = r.find(x => x.k === STORE); if (prev && prev.f === f && prev.n === n && Date.now() - prev.ts < 6e5) return;
+  r = r.filter(x => x.k !== STORE); r.unshift({ k: STORE, t: D.klausur.titel, n, f, ts: Date.now() }); localStorage.setItem(RECENT, JSON.stringify(r.slice(0, 4))); } catch(_){} }
+function renderRecent(){ let r = []; try { r = JSON.parse(localStorage.getItem(RECENT) || '[]'); } catch(_){}
+  if (!Array.isArray(r) || !r.length) return;
+  $('#recent').innerHTML = `<h4>Zuletzt bearbeitet – öffne die PDF erneut, dein Stand ist gespeichert</h4>` + r.slice(0, 3).map(x =>
+    `<div class="rc"><b>${esc(x.t)}</b><span>${x.f} von ${x.n} fertig · ${new Date(x.ts).toLocaleDateString('de-DE', { day:'numeric', month:'numeric' })}</span></div>`).join(''); }
 function gotoCode(code){ cur.code = code; cur.sel = null; renderPages(); refresh(); renderEH(); if (cur.tab === 'fehlerbild') renderFB(); }
 // ---------- Prüfen ----------
+const KB = `<details class="kb"><summary><svg class="i chev"><use href="#i-right"/></svg>Tastenkürzel</summary><div class="kbgrid">
+  <span><kbd>N</kbd></span><span>nächster offener Vorschlag</span><span><kbd>↵</kbd></span><span>annehmen</span><span><kbd>X</kbd></span><span>verwerfen</span>
+  <span><kbd>←</kbd> <kbd>→</kbd></span><span>blättern</span><span><kbd>E</kbd></span><span>eigene Anstreichung (Unterstreichen)</span><span><kbd>F</kbd></span><span>Freihand</span>
+  <span><kbd>Strg</kbd>+<kbd>Z</kbd></span><span>Freihand rückgängig</span><span><kbd>Esc</kbd></span><span>Auswahl aufheben</span></div></details>`;
+const stTxt = s => ({ open:'offen', acc:'angenommen', rej:'verworfen' }[s]);
+const stBadge = (it, changed) => `<span class="badge s-${it.status}">${it.status==='acc' ? '<svg class="i" style="width:13px;height:13px"><use href="#i-check"/></svg>' : ''}${stTxt(it.status)}${changed?', geändert':''}</span>`;
 function renderEditor(){
   const it = items().find(i => i.id === cur.sel), ed = $('#editor');
-  if (!it){ ed.innerHTML = `<div class="card"><h3>Nichts ausgewählt</h3><div class="note">Klicke eine Anstreichung im Scan oder in der Liste an. Schnell geht es mit der Tastatur: <kbd>N</kbd> nächster offener Vorschlag, <kbd>↵</kbd> annehmen, <kbd>X</kbd> verwerfen, <kbd>←</kbd>/<kbd>→</kbd> blättern, <kbd>E</kbd> eigene Anstreichung.</div><div class="row"><button class="btn pri" id="goNext">Ersten offenen Vorschlag zeigen</button></div></div>`;
+  if (!it){
+    const all = items(), open = all.filter(i => i.status==='open' && vis(i)).length, any = all.some(i => i.src==='claude');
+    if (!open && any){
+      const nx = D.codes.map(c => c.code).find(c => c !== cur.code && items(c).some(i => i.src==='claude' && i.status==='open'));
+      ed.innerHTML = `<div class="card doneCard"><svg class="i big"><use href="#i-check"/></svg><h3>Code ${esc(cur.code)} ist durchgesehen</h3>
+        <p class="note">Alle Vorschläge sind entschieden. Trag jetzt die Punkte unter „Bewertung“ ein${nx ? ' oder mach mit dem nächsten Code weiter' : ''}.</p>
+        <div class="row" style="justify-content:center">${nx ? `<button class="btn pri" id="goCode" data-c="${esc(nx)}">Weiter mit Code ${esc(nx)}</button>` : ''}<button class="btn" id="goEH">Zur Bewertung</button></div></div>`;
+      const g = $('#goCode'); if (g) g.onclick = () => gotoCode(g.dataset.c);
+      $('#goEH').onclick = () => document.querySelector('.tabs [data-t="bewertung"]').click(); return;
+    }
+    ed.innerHTML = `<div class="card"><h3>${open ? `${open} ${open===1 ? 'Vorschlag wartet' : 'Vorschläge warten'} auf dich` : 'Nichts ausgewählt'}</h3>
+      <p class="note">Tippe eine Anstreichung im Scan oder in der Liste an. Im Schnellmenü an der Stelle nimmst du sie an, verwirfst oder änderst sie.</p>
+      ${open ? `<div class="row"><button class="btn pri" id="goNext">Ersten offenen Vorschlag zeigen <small>N</small></button></div>` : ''}${KB}</div>`;
     const b = $('#goNext'); if (b) b.onclick = () => nextOpen(); return; }
   const all = items(), idx = all.indexOf(all.find(i => i.id===it.id));
-  const st = { open:'offen', acc:'angenommen', rej:'verworfen' }[it.status];
+  const st = stTxt(it.status);
   if (isI(it)) return renderEditorInhalt(it, idx, all, st);
   const changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr || !!it.cink);
+  const own = it.src === 'rob', editOpen = own && !it.sign || (renderEditor.editOpen ?? false);
   ed.innerHTML = `<div class="card">
-    <h3>${it.src==='rob' ? 'Eigene Anstreichung' : 'Vorschlag'} ${idx+1} von ${all.length}</h3>
+    <div class="ehead"><div class="lbig">${esc(label(it))}</div><span class="nr">${idx+1} / ${all.length}</span></div>
     <div class="meta">Blatt ${it.page+1}, Zeile ${it.line}
-      <span class="badge ${it.src==='rob'?'r':'c'}">${it.src==='rob'?'von dir':'Claude'}</span>
-      ${it.src==='claude' ? `<span class="badge ${it.conf==='ermessen'?'e':it.conf==='unsicher'?'u':''}">${it.conf==='unsicher'?'Lesung unsicher':it.conf==='ermessen'?'Ermessensfrage':'sicher'}</span>` : ''}
-      <span class="badge">${st}${changed?', geändert':''}</span></div>
-    ${it.src==='claude' && changed ? `<div class="note">Ursprünglich: ${esc(it.orig.sign + (it.orig.corr?' ('+it.orig.corr+')':''))}</div>` : ''}
-    <label class="f">Korrekturzeichen</label>
-    <div class="signs">${SIGNS.map(s => `<button data-s="${esc(s)}" class="${s===it.sign?'on':''}">${esc(s)}</button>`).join('')}</div>
-    <label class="f">Markierung</label>
-    <div class="signs"><button data-g="0" class="${isGap(it)?'':'on'}">Unterstreichung</button><button data-g="1" class="${isGap(it)?'on':''}">Lücke (fehlendes Zeichen / Einfügung)</button></div>
-    <label class="f">Positivkorrektur</label>
-    <input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. effects  ·  Streichung: -">${it.cink ? '<div class="note">✎ Positivkorrektur handschriftlich – Tippen ersetzt sie</div>' : ''}
-    <label class="f">Fehlermuster (für Förderblatt und Kursstatistik)</label>
-    <select id="muster"><option value="">–</option>${Object.entries(D.muster).map(([k,v]) => `<option value="${k}" ${k===it.muster?'selected':''}>${esc(v)}</option>`).join('')}</select>
-    <div class="row">
-      <button class="btn pri" id="acc">Annehmen<small>↵</small></button>
-      ${it.src==='claude' ? `<button class="btn neg" id="rej">Verwerfen<small>X</small></button><button class="btn" id="reset">Zurücksetzen</button>` : `<button class="btn neg" id="del">Löschen</button>`}
+      ${own ? '<span class="badge r">eigene Anstreichung</span>' : it.conf==='unsicher' ? '<span class="badge u">Lesung unsicher</span>' : it.conf==='ermessen' ? '<span class="badge e">Ermessensfrage</span>' : ''}
+      ${own ? '' : stBadge(it, changed)}</div>
+    ${!own && changed ? `<div class="orig">Ursprünglicher Vorschlag: ${esc(it.orig.sign + (it.orig.corr?' ('+it.orig.corr+')':''))}</div>` : ''}
+    <div class="decide">
+      <button class="btn okb${it.status==='acc' && !own ? ' cur' : ''}" id="acc"><svg class="i"><use href="#i-check"/></svg>${own ? 'Fertig' : 'Annehmen'}<small>↵</small></button>
+      ${own ? `<button class="btn neg" id="del"><svg class="i"><use href="#i-x"/></svg>Löschen</button>`
+            : `<button class="btn neg${it.status==='rej' ? ' cur' : ''}" id="rej"><svg class="i"><use href="#i-x"/></svg>Verwerfen<small>X</small></button>`}
     </div>
-    <div class="row"><button class="btn" id="prev">← Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
+    <details class="edit"${editOpen ? ' open' : ''}><summary><svg class="i chev"><use href="#i-right"/></svg>Zeichen, Positivkorrektur, Fehlermuster</summary>
+      <label class="f">Korrekturzeichen</label>
+      <div class="signs">${SIGNS.map(s => `<button data-s="${esc(s)}" class="${s===it.sign?'on':''}">${esc(s)}</button>`).join('')}</div>
+      <label class="f">Markierung</label>
+      <div class="toggle2"><button data-g="0" class="${isGap(it)?'':'on'}">Unterstreichung</button><button data-g="1" class="${isGap(it)?'on':''}">Lücke (fehlt / Einfügung)</button></div>
+      <label class="f" for="corr">Positivkorrektur</label>
+      <input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. effects  ·  Streichung: -">${it.cink ? '<div class="note">✎ Positivkorrektur handschriftlich – Tippen ersetzt sie</div>' : ''}
+      <label class="f" for="muster">Fehlermuster (für Förderblatt und Kursstatistik)</label>
+      <select id="muster"><option value="">–</option>${Object.entries(D.muster).map(([k,v]) => `<option value="${k}" ${k===it.muster?'selected':''}>${esc(v)}</option>`).join('')}</select>
+      ${own ? '' : `<div class="row"><button class="btn ghost" id="reset"><svg class="i"><use href="#i-reset"/></svg>Entscheidung zurücksetzen</button></div>`}
+    </details>
+    <div class="navrow"><button class="btn ghost" id="prev"><svg class="i"><use href="#i-left"/></svg>Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
   </div>`;
+  const de = ed.querySelector('details.edit'); de.ontoggle = () => { if (!(own && !it.sign)) renderEditor.editOpen = de.open; };
   ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
-  ed.querySelectorAll('.signs button[data-g]').forEach(b => b.onclick = () => setGap(it, b.dataset.g === '1'));
+  ed.querySelectorAll('.toggle2 button[data-g]').forEach(b => b.onclick = () => setGap(it, b.dataset.g === '1'));
   $('#corr').oninput = e => edit(it, { corr:e.target.value, cink:null }, true);
   $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } };
   $('#muster').onchange = e => edit(it, { muster:e.target.value });
@@ -530,23 +793,24 @@ function aspectOptions(sel){
     `<optgroup label="${esc(t.teil)}: ${esc(k.t)}">${k.aspekte.map(a => `<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.t)}</option>`).join('')}</optgroup>`).join('')).join('');
 }
 function renderEditorInhalt(it, idx, all, st){
-  const ed = $('#editor'), changed = it.src==='claude' && (it.sign!==it.orig.sign || it.corr!==it.orig.corr || it.aspect!==it.orig.aspect);
+  const ed = $('#editor'), own = it.src==='rob', changed = !own && (it.sign!==it.orig.sign || it.corr!==it.orig.corr || it.aspect!==it.orig.aspect);
   ed.innerHTML = `<div class="card">
-    <h3>${it.src==='rob' ? 'Eigene Inhaltsanmerkung' : 'Inhalt – Vorschlag'} ${idx+1} von ${all.length}</h3>
+    <div class="ehead"><div class="lbig">${esc(labelI(it))}</div><span class="nr">${idx+1} / ${all.length}</span></div>
     <div class="meta">Blatt ${it.page+1}, ${it.kind === 'rand' ? `Zeile ${it.lines[0]}${it.lines[1] !== it.lines[0] ? '–' + it.lines[1] : ''}` : `Zeile ${it.line}`}
-      <span class="badge i">Inhalt</span><span class="badge ${it.src==='rob'?'r':'c'}">${it.src==='rob'?'von dir':'Claude'}</span>
-      <span class="badge">${st}${changed?', geändert':''}</span></div>
-    ${it.src==='claude' && changed ? `<div class="note">Ursprünglich: ${esc(labelI(it.orig))}</div>` : ''}
+      <span class="badge i">Inhalt</span>${own ? '<span class="badge r">eigene Anmerkung</span>' : stBadge(it, changed)}</div>
+    ${changed ? `<div class="orig">Ursprünglicher Vorschlag: ${esc(labelI(it.orig))}</div>` : ''}
+    <div class="decide">
+      <button class="btn okb${it.status==='acc' && !own ? ' cur' : ''}" id="acc"><svg class="i"><use href="#i-check"/></svg>${own ? 'Fertig' : 'Annehmen'}<small>↵</small></button>
+      ${own ? `<button class="btn neg" id="del"><svg class="i"><use href="#i-x"/></svg>Löschen</button>`
+            : `<button class="btn neg${it.status==='rej' ? ' cur' : ''}" id="rej"><svg class="i"><use href="#i-x"/></svg>Verwerfen<small>X</small></button>`}
+    </div>
     <label class="f">${it.kind === 'haken' ? 'Haken im Text' : 'Randanmerkung'}</label>
     <div class="signs">${ISIGNS[it.kind].map(s => `<button data-s="${esc(s)}" class="${s===it.sign?'on':''}">${esc(s)}</button>`).join('')}</div>
-    ${it.kind === 'rand' ? `<label class="f">Kurzkommentar (optional)</label><input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. which function?">` : ''}
-    <label class="f">Aspekt im Erwartungshorizont</label>
+    ${it.kind === 'rand' ? `<label class="f" for="corr">Kurzkommentar (optional)</label><input type="text" id="corr" value="${esc(it.corr||'')}" placeholder="z.B. which function?">` : ''}
+    <label class="f" for="aspect">Aspekt im Erwartungshorizont</label>
     <select id="aspect">${aspectOptions(it.aspect)}</select>
-    <div class="row">
-      <button class="btn pri" id="acc">Annehmen<small>↵</small></button>
-      ${it.src==='claude' ? `<button class="btn neg" id="rej">Verwerfen<small>X</small></button><button class="btn" id="reset">Zurücksetzen</button>` : `<button class="btn neg" id="del">Löschen</button>`}
-    </div>
-    <div class="row"><button class="btn" id="prev">← Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
+    ${own ? '' : `<div class="row"><button class="btn ghost" id="reset"><svg class="i"><use href="#i-reset"/></svg>Entscheidung zurücksetzen</button></div>`}
+    <div class="navrow"><button class="btn ghost" id="prev"><svg class="i"><use href="#i-left"/></svg>Vorheriger</button><button class="btn" id="nxt">Nächster offener <small>N</small></button></div>
   </div>`;
   ed.querySelectorAll('.signs button[data-s]').forEach(b => b.onclick = () => edit(it, { sign:b.dataset.s }));
   if ($('#corr')){ $('#corr').oninput = e => edit(it, { corr:e.target.value, cink:null }, true); $('#corr').onkeydown = e => { if (e.key==='Enter'){ e.preventDefault(); decide(it.id,'acc'); } }; }
@@ -592,12 +856,21 @@ function scrollTo(id){ const el = document.querySelector(`.mk[data-id="${id}"] .
 function renderList(){
   const F = { alle:'Alle', open:'Offen', sprache:'Sprache', inhalt:'Inhalt', check:'Ermessen / unsicher', rob:'Eigene', rej:'Verworfen' };
   if (document.body.classList.contains('noinhalt')){ delete F.sprache; delete F.inhalt; }
-  $('#filters').innerHTML = Object.entries(F).map(([k,v]) => `<button data-f="${k}" class="${cur.filter===k?'on':''}">${v}</button>`).join('');
-  const all = items().filter(i => cur.filter==='alle' || (cur.filter==='open' && i.status==='open') || (cur.filter==='check' && i.conf!=='sicher')
-     || (cur.filter==='rob' && i.src==='rob') || (cur.filter==='rej' && i.status==='rej') || (cur.filter==='sprache' && !isI(i)) || (cur.filter==='inhalt' && isI(i)));
-  const icon = it => it.status==='acc' ? '<span style="color:var(--ok)">✓</span>' : it.status==='rej' ? '<span style="color:var(--grey)">✗</span>' : '<span style="color:var(--red)">•</span>';
-  $('#list').innerHTML = all.length ? all.map(it => `<div class="li ${cur.sel===it.id?'on':''}" data-id="${it.id}"><span class="st">${icon(it)}</span><span class="pos">B${it.page+1} · Z${it.line}</span><span>${esc(anyLabel(it))}</span>
-     <span>${isI(it)?'<span class="badge i">Inhalt</span> ':''}${it.src==='rob'?'<span class="badge r">eigene</span>':it.conf==='ermessen'?'<span class="badge e">Ermessen</span>':it.conf==='unsicher'?'<span class="badge u">unsicher</span>':''}</span></div>`).join('')
+  const base = items(), test = (k, i) => k==='alle' || (k==='open' && i.status==='open') || (k==='check' && i.conf!=='sicher')
+     || (k==='rob' && i.src==='rob') || (k==='rej' && i.status==='rej') || (k==='sprache' && !isI(i)) || (k==='inhalt' && isI(i));
+  $('#filters').innerHTML = Object.entries(F).map(([k,v]) => { const n = base.filter(i => test(k, i)).length;
+    if (!n && !['alle','open'].includes(k) && cur.filter !== k) return '';
+    return `<button data-f="${k}" class="${cur.filter===k?'on':''}">${v}${k==='alle' ? '' : ` <b>${n}</b>`}</button>`; }).join('');
+  const cl = base.filter(i => i.src==='claude'), dn = cl.filter(i => i.status!=='open').length;
+  $('#pstat').innerHTML = cl.length ? `<div class="pstat${dn===cl.length?' done':''}"><div class="pb"><i style="width:${100*dn/cl.length}%"></i></div><span>${dn} von ${cl.length} entschieden</span></div>` : '';
+  const all = base.filter(i => test(cur.filter, i));
+  const icon = it => it.status==='acc' ? '<svg class="i ok-c"><use href="#i-check"/></svg>' : it.status==='rej' ? '<svg class="i rej-c"><use href="#i-x"/></svg>'
+     : `<span class="o${it.conf==='unsicher' ? ' u' : it.conf==='ermessen' ? ' e' : ''}" title="offen"></span>`;
+  const multi = codeData().pages.length > 1; let pg = -1;
+  $('#list').innerHTML = all.length ? all.map(it => { let h = '';
+      if (multi && it.page !== pg){ pg = it.page; h = `<div class="lgrp">Blatt ${pg+1}</div>`; }
+      return h + `<div class="li s-${it.status} ${cur.sel===it.id?'on':''}" data-id="${it.id}"><span class="st">${icon(it)}</span><span class="pos">Z. ${it.line}</span><span>${esc(anyLabel(it))}</span>
+     <span>${isI(it)?'<span class="badge i">Inhalt</span> ':''}${it.src==='rob'?'<span class="badge r">eigene</span>':it.conf==='ermessen'?'<span class="badge e">Ermessen</span>':it.conf==='unsicher'?'<span class="badge u">unsicher</span>':''}</span></div>`; }).join('')
      : '<p class="empty">Keine Einträge in diesem Filter.</p>';
 }
 
@@ -605,11 +878,12 @@ function renderList(){
 function counts(){ const c = {}; items().filter(i => final(i) && !isI(i)).forEach(i => c[i.sign] = (c[i.sign]||0) + 1); return c; }
 function renderEH(){
   const pts = cs().pts, cnt = counts();
-  let h = `<p class="note">Die Punkte vergibst du. Bei den Inhaltskriterien siehst du, welche EH-Aspekte gefunden wurden (Klick springt zur Stelle), bei der Sprachrichtigkeit die Zahl der Anstreichungen. Beides sind Hinweise, keine Punktvorschläge.</p>`;
+  const closed = renderEH.closed = renderEH.closed || new Set();
+  let h = `<details class="info"><summary><svg class="i chev"><use href="#i-right"/></svg>Hinweise zur Bewertung</summary><p class="note intro">Die Punkte vergibst du. Bei den Inhaltskriterien siehst du, welche EH-Aspekte gefunden wurden (Klick springt zur Stelle), bei der Sprachrichtigkeit die Zahl der Anstreichungen. Beides sind Hinweise, keine Punktvorschläge.</p></details>`;
   D.eh.forEach((t, ti) => {
-    h += `<h4><span>${esc(t.teil)}</span><span id="ts${ti}"></span></h4>`;
+    h += `<details class="blk" data-b="${ti}"${closed.has(ti) ? '' : ' open'}><summary><svg class="i chev"><use href="#i-right"/></svg>${esc(t.teil)}<span class="miss" id="tm${ti}"></span><span class="ts" id="ts${ti}"></span></summary><div class="bb">`;
     t.krit.forEach(k => {
-      h += `<div class="k"><span>${esc(k.t)}${k.bonus?' <span class="badge">Bonus</span>':''}</span><input type="number" min="0" max="${k.max}" step="0.5" data-k="${k.id}" value="${pts[k.id] ?? ''}"><span>/ ${k.max}</span>`;
+      h += `<div class="k"><span>${esc(k.t)}${k.bonus?' <span class="badge">Bonus</span>':''}</span><input type="number" min="0" max="${k.max}" step="0.5" data-k="${k.id}" value="${pts[k.id] ?? ''}" placeholder="–" aria-label="Punkte: ${esc(k.t)}"><span>/ ${k.max}</span>`;
       if (k.zeichen) h += `<div class="hint">Angestrichen: ${k.zeichen.map(z => `${esc(z)} ${cnt[z]||0}`).join(' · ')}</div>`;
       if (k.aspekte){ const A = aspectStatus(), rows = k.aspekte.map(a => ({ a, s: A[a.id] }));
         const full = rows.filter(r => r.s && r.s.sign === '✓').length, half = rows.filter(r => r.s && r.s.sign === '(✓)').length;
@@ -618,8 +892,9 @@ function renderEH(){
             <b>${r.s ? r.s.sign : '–'}</b><span>${esc(r.a.t)}${r.s && r.s.status !== 'acc' ? ' <i>(Vorschlag)</i>' : ''}${!r.s ? ' <i>nicht gefunden</i>' : ''}</span></div>`).join('') + `</div>`; }
       h += `</div>`;
     });
+    h += `</div></details>`;
   });
-  h += `<label class="f" style="margin-top:14px">Kommentar für die Schülerin / den Schüler</label><textarea id="komm">${esc(cs().kommentar||'')}</textarea>`;
+  h += `<label class="f" style="margin-top:14px" for="komm">Kommentar für die Schülerin / den Schüler</label><textarea id="komm">${esc(cs().kommentar||'')}</textarea>`;
   h += `<div class="sum"><div>Inhalt<b id="sI">–</b></div><div>Sprache<b id="sS">–</b></div><div>Gesamt<b id="sG">–</b></div><div>Note<b id="sN">–</b></div></div>`;
   $('#pane-bewertung').innerHTML = h;
   $('#pane-bewertung').querySelectorAll('input[data-k]').forEach(inp => inp.oninput = () => {
@@ -629,6 +904,7 @@ function renderEH(){
     save(); sums();
   });
   $('#komm').oninput = e => { cs().kommentar = e.target.value; save(); };
+  $('#pane-bewertung').querySelectorAll('details.blk').forEach(d => d.ontoggle = () => { const b = Number(d.dataset.b); d.open ? closed.delete(b) : closed.add(b); });
   $('#pane-bewertung').querySelectorAll('[data-jump]').forEach(el => el.onclick = () => { cur.sel = el.dataset.jump; drawMarks(); renderEditor(); renderList(); scrollTo(cur.sel); });
   sums();
 }
@@ -646,7 +922,9 @@ function totals(code){
   return { I, Sp, G, note, per, complete: filled === n - 1 || filled === n };
 }
 function sums(){
-  const T = totals(); D.eh.forEach((t, i) => { const el = $('#ts'+i); if (el) el.textContent = T.per[i] + ' / ' + t.max; });
+  const T = totals(), P_ = cs().pts; D.eh.forEach((t, i) => { const el = $('#ts'+i); if (el) el.textContent = T.per[i] + ' / ' + t.max;
+    const m = $('#tm'+i); if (m){ const n = t.krit.filter(k => !k.bonus && P_[k.id] == null).length; m.textContent = n ? n + ' offen' : '✓'; m.classList.toggle('ok', !n); } });
+  const tb = $('#tcB'); if (tb){ const any = Object.keys(P_).length; tb.textContent = any ? (T.complete ? 'Note ' + T.note : T.G + ' P.') : ''; tb.className = 'tc' + (any && T.complete ? ' ok' : ''); }
   const MX = maxima(); $('#sI').textContent = T.I + '/' + MX.I; $('#sS').textContent = T.Sp + '/' + MX.S; $('#sG').textContent = T.G + '/' + (MX.I + MX.S);
   $('#sN').textContent = Object.keys(cs().pts).length ? T.note : '–';
 }
@@ -678,29 +956,29 @@ function renderFB(){
   const P = POOL(), mc = musterCounts(cur.code), sel = selection(), reco = recommended(cur.code), f = cs().foerder, d = density(cur.code);
   const present = Object.keys(mc).filter(k => P[k]).sort((a,b) => mc[b]-mc[a]);
   const rest = Object.keys(P).filter(k => !present.includes(k));
-  const row = k => `<div class="fr"><span><b>${esc(D.muster[k] || k)}</b><small>${esc(P[k].titel)}</small></span>
+  const row = k => `<div class="fr"><span><b>${esc(D.muster[k] || k)}</b>${P[k].titel && P[k].titel !== (D.muster[k] || k) ? `<small>${esc(P[k].titel)}</small>` : ''}</span>
       <span class="chips">${(P[k].uebungen || []).map(u => `<button class="chip ${sel.includes(u.id)?'on':''} ${reco.includes(u.id)?'reco':''}" data-ex="${u.id}" title="${esc(u.auftrag)}">${esc(u.niveau)}</button>`).join('')}</span>
-      <span class="badge">${mc[k] ? mc[k] + '×' : '–'}</span></div>`;
+      <span class="cnt" title="Anstreichungen mit diesem Fehlermuster">${mc[k] ? mc[k] + '×' : '–'}</span></div>`;
   const L = S.log.filter(l => l.code===cur.code);
   const own = cs().own.length, rej = L.filter(l => l.action==='verworfen').length, chg = L.filter(l => l.action==='geändert').length;
   const ct = courseTop();
   $('#pane-fehlerbild').innerHTML = `
    <div class="card"><h3>Förderblatt für Code ${esc(cur.code)}</h3>
      ${Object.keys(P).length ? `
-     <p class="note">${f.manual ? 'Deine Auswahl.' : 'Vorauswahl: die drei häufigsten Fehlermuster'}${f.manual ? '' : d != null ? ` – Niveau nach Fehlerdichte (${d.toFixed(1)} pro 100 Wörter): ${d >= 8 ? 'Basis' : d < 4 ? 'Vertiefung' : 'Basis bei häufigen, Vertiefung bei seltenen Fehlern'}.` : '.'} Grün umrandet = empfohlen. Klick auf Basis/Vertiefung wählt die Übung an oder ab.</p>
+     <p class="note">${f.manual ? 'Deine Auswahl.' : 'Vorauswahl: die drei häufigsten Fehlermuster'}${f.manual ? '' : d != null ? ` – Niveau nach Fehlerdichte (${d.toFixed(1)} pro 100 Wörter): ${d >= 8 ? 'Basis' : d < 4 ? 'Vertiefung' : 'Basis bei häufigen, Vertiefung bei seltenen Fehlern'}.` : '.'} <span class="recohint">empfohlen.</span> Tippe auf Basis oder Vertiefung, um die Übung an- oder abzuwählen.</p>
      <div class="fl">${present.length ? present.map(row).join('') : '<p class="empty">Noch keine Vorschläge mit Fehlermuster.</p>'}</div>
      <details class="more"><summary>Weitere Übungen aus dem Pool (${rest.length} Muster)</summary><div class="fl">${rest.map(row).join('')}</div></details>
      <div class="row" style="margin-top:10px">
        <label class="chk"><input type="checkbox" id="fAktiv" ${f.aktiv?'checked':''}> Förderblatt in den PDF-Export aufnehmen</label>
        <label class="chk"><input type="checkbox" id="fLoes" ${f.loesung?'checked':''}> Lösungsblatt beilegen</label></div>
-     <div class="row">${f.manual ? '<button class="btn" id="fReset">Empfehlung wiederherstellen</button>' : ''}<button class="btn" id="fOnly">Nur Förderblatt als PDF</button></div>
+     <div class="row">${f.manual ? '<button class="btn" id="fReset">Empfehlung wiederherstellen</button>' : ''}<button class="btn" id="fOnly"><svg class="i"><use href="#i-pdf"/></svg>Nur Förderblatt als PDF</button></div>
      <p class="note">${sel.length} ${sel.length === 1 ? 'Übung' : 'Übungen'} ausgewählt${open ? ` · ${open} Vorschläge noch offen – die Empfehlung kann sich noch ändern` : ''}.</p>`
      : '<p class="empty">Diese Vorkorrektur enthält keinen Übungspool.</p>'}</div>
    ${ct.length ? `<div class="card"><h3>Im Kurs häufig (für eine Förderstunde)</h3>${ct.map(([k, v]) => `<div class="hbar"><span>${esc(D.muster[k] || k)}</span><span class="note">${v.sus} von ${D.codes.length} SuS</span><b>${v.n}</b></div>`).join('')}</div>` : ''}
    <div class="card"><h3>Anstreichungen nach Zeichen</h3>${fin.length ? Object.entries(bySign).sort((a,b)=>b[1]-a[1]).map(([s,n]) => `<div class="hbar"><span>${esc(s)}</span><span class="t"><i style="width:${100*n/mx}%"></i></span><b>${n}</b></div>`).join('') : '<p class="empty">Noch keine angenommenen Anstreichungen.</p>'}</div>
    <div class="card"><h3>Lernprotokoll für dein Korrekturprofil</h3>
      <div class="hbar"><span>verworfen</span><span></span><b>${rej}</b></div><div class="hbar"><span>geändert</span><span></span><b>${chg}</b></div><div class="hbar"><span>selbst ergänzt</span><span></span><b>${own}</b></div>
-     <p class="note">Jede Abweichung von meinen Vorschlägen wird mitgeschrieben und mit „Stand sichern“ exportiert. Daraus passe ich nach jeder Klausur deinen Korrekturmaßstab an.</p></div>`;
+     <p class="note">Jede Abweichung von meinen Vorschlägen wird mitgeschrieben und mit „Datei → Als Datei sichern“ exportiert. Daraus passe ich nach jeder Klausur deinen Korrekturmaßstab an.</p></div>`;
   const PN = $('#pane-fehlerbild');
   PN.querySelectorAll('.chip[data-ex]').forEach(b => b.onclick = () => { const id = b.dataset.ex, cur_ = selection(); setSel(cur_.includes(id) ? cur_.filter(x => x !== id) : [...cur_, id]); });
   const r = $('#fReset'); if (r) r.onclick = () => { cs().foerder.manual = false; save(); renderFB(); };
@@ -929,13 +1207,13 @@ function renderPop(){
   const el = document.createElement('div'); el.className = 'qpop'; el.dataset.id = it.id;
   el.innerHTML = (own ? `<div class="qmeta">Eigene Anstreichung – Zeichen antippen</div>`
       : `<div class="qlab">${esc(anyLabel(it))}</div><div class="qmeta">${it.conf==='unsicher' ? 'Lesung unsicher · ' : it.conf==='ermessen' ? 'Ermessensfrage · ' : ''}${st}</div>
-         <div class="qrow"><button class="qa" data-q="acc">✓ Annehmen</button><button class="qr" data-q="rej">✗ Verwerfen</button>${inh ? '' : `<button data-q="more">${more ? '▴' : 'Ändern'}</button>`}</div>`)
+         <div class="qrow"><button class="qa" data-q="acc"><svg class="i"><use href="#i-check"/></svg>Annehmen</button><button class="qr" data-q="rej"><svg class="i"><use href="#i-x"/></svg>Verwerfen</button>${inh ? '' : `<button data-q="more">${more ? 'Weniger' : 'Ändern'}</button>`}</div>`)
     + (more ? `<div class="qrow signs">${SIGNS.map(x => `<button data-s="${esc(x)}" class="${x===it.sign?'on':''}">${esc(x)}</button>`).join('')}</div>
          ${usePad() ? `<div class="qpad"><canvas></canvas>${it.cink ? '' : '<span class="qph">Positivkorrektur hier schreiben (optional)</span>'}</div>`
                     : `<input type="text" class="qcorr" value="${esc(it.corr||'')}" placeholder="Positivkorrektur (optional) · Streichung: -">`}
          <div class="qrow"><button data-q="gap" class="${isGap(it)?'on':''}">Lücke</button>${usePad()
            ? `<button data-q="clr">Leeren</button><button data-q="kbd" title="Positivkorrektur tippen">⌨</button>`
-           : `<button data-q="pen" title="Positivkorrektur mit Stift oder Maus schreiben">✎</button>`}${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done">Fertig</button>` : ''}</div>` : '');
+           : `<button data-q="pen" title="Positivkorrektur mit Stift oder Maus schreiben">✎</button>`}${own ? `<button class="qr" data-q="del">Löschen</button><button class="qa" data-q="done"><svg class="i"><use href="#i-check"/></svg>Fertig</button>` : ''}</div>` : '');
   page.appendChild(el);
   const P = codeData().pages[it.page], s = it.segs[it.segs.length-1], sc = page.clientWidth / P.w, w = el.offsetWidth, h = el.offsetHeight;
   // waagerecht: links vom Korrekturrand bleiben, damit die Randspalte (dort erscheint das Ergebnis) sichtbar bleibt
@@ -974,7 +1252,7 @@ function refresh(){ renderCodes(); drawMarks(); renderEditor(); renderList(); if
 const OWNTXT = { ink: '✎ Freihand … (Esc)', erase: '⌫ Radierer … (Esc)', sprache: '✎ Sprache: Wort ziehen … (Esc)', haken: '✎ Inhalt: Haken klicken … (Esc)', rand: '✎ Inhalt: Randstrich über Zeilen ziehen … (Esc)' };
 function setOwn(mode){ cur.own = mode || false; updTools(); $('#ownMenu').open = false; $('#ownBtn').classList.toggle('on', !!cur.own); $('#viewer').classList.toggle('own', !!cur.own); $('#ownBtn').textContent = cur.own ? OWNTXT[cur.own] : '✎ Anstreichen ▾';
   if (cur.own === 'haken' || cur.own === 'rand'){ $('#showI').checked = true; cur.show = { sprache: $('#showS').checked, inhalt: true }; drawMarks(); } }
-$('#codes').onclick = e => { const b = e.target.closest('button.nav'); if (!b || b.disabled) return; const i = D.codes.findIndex(c => c.code === cur.code) + Number(b.dataset.step); if (D.codes[i]) gotoCode(D.codes[i].code); };
+$('#codes').onclick = e => { const c = e.target.closest('.cchip'); if (c){ if (c.dataset.code !== cur.code) gotoCode(c.dataset.code); return; } const b = e.target.closest('button.nav'); if (!b || b.disabled) return; const i = D.codes.findIndex(c => c.code === cur.code) + Number(b.dataset.step); if (D.codes[i]) gotoCode(D.codes[i].code); };
 $('#codes').onchange = e => { if (e.target.id === 'codeSel') gotoCode(e.target.value); };
 $('#filters').onclick = e => { const b = e.target.closest('button'); if (b){ cur.filter = b.dataset.f; renderList(); } };
 $('#list').onclick = e => { const r = e.target.closest('.li'); if (r){ cur.sel = r.dataset.id; refresh(); scrollTo(r.dataset.id); } };
@@ -987,6 +1265,16 @@ $('#ownBtn').onclick = e => { if (cur && cur.own){ e.preventDefault(); setOwn(fa
 $('#showRej').onchange = drawMarks;
 $('#showS').onchange = $('#showI').onchange = () => { cur.show = { sprache: $('#showS').checked, inhalt: $('#showI').checked }; drawMarks(); renderList(); };
 $('#zoom').oninput = () => { applyZoom(); renderPop(); };
+['zOut','zIn'].forEach((id, k) => $('#' + id).onclick = () => { const r = VW.getBoundingClientRect(); zoomTo(Number($('#zoom').value) + (k ? 10 : -10), r.left + r.width / 2, r.top + r.height / 3); });
+// Menüs schließen, wenn daneben getippt wird
+document.addEventListener('click', e => document.querySelectorAll('details.menu[open]').forEach(d => { if (!d.contains(e.target)) d.open = false; }));
+// Seitenleiste im Hochformat: Griff antippen = größer/kleiner, ziehen = Höhe frei wählen
+(() => { const g = $('#grab'), a = $('#side'); let y0 = null, h0 = 0;
+  g.addEventListener('pointerdown', e => { y0 = e.clientY; h0 = a.getBoundingClientRect().height; try { g.setPointerCapture(e.pointerId); } catch(_){} a.style.transition = 'none'; });
+  g.addEventListener('pointermove', e => { if (y0 == null) return; a.style.height = Math.max(96, Math.min(innerHeight * .82, h0 + y0 - e.clientY)) + 'px'; });
+  const up = e => { if (y0 == null) return; const moved = Math.abs(e.clientY - y0) > 6; y0 = null; a.style.transition = '';
+    if (!moved){ a.style.height = ''; a.classList.toggle('open'); } renderPop(); };
+  g.addEventListener('pointerup', up); g.addEventListener('pointercancel', up); })();
 function toast(msg, ms){ const t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.h); if (ms !== 0) toast.h = setTimeout(() => t.style.display = 'none', ms || 6000); }
 function inPreview(){ try { return window.top !== window.self; } catch(e){ return true; } }
 function download(blob, name){
@@ -1158,6 +1446,8 @@ function boot(data){
   try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch(_){}
   cur = { code: D.codes[0].code, sel: null, filter: 'alle', own: false, tab: 'pruefen' }; undo.length = 0; updTools();
   $('#start').style.display = 'none'; document.body.classList.add('loaded');
+  { const fit = Math.floor((VW.clientWidth - 56) / 9.5 / 5) * 5; $('#zoom').value = Math.max(50, Math.min(120, fit || 80)); }
+  setSaved(true, 'Wird automatisch gespeichert');
   document.body.classList.toggle('noinhalt', !D.codes.some(c => (c.inhalt || []).length));
   document.title = 'Korrektur · ' + (D.klausur.id || D.klausur.titel);
   try { renderPages(); refresh(); renderEH(); booted = true; } catch(e){ fatal(e); }
@@ -1195,18 +1485,18 @@ async function openFiles(files){
     merged.codes.sort((a, b) => a.code.localeCompare(b.code, 'de', { numeric:true }));
     boot(merged);
     const done = Object.values(S.codes).reduce((n, c) => n + Object.keys(c.dec).length + c.own.length, 0);
-    toast(`${merged.klausur.titel}: ${merged.codes.length} ${merged.codes.length === 1 ? 'Klausur' : 'Klausuren'} geladen.` + (done ? ` Gespeicherter Stand fortgesetzt (${done} Entscheidungen) – neu beginnen über „Korrekturstand“.` : ''), done ? 9000 : 5000);
+    toast(`${merged.klausur.titel}: ${merged.codes.length} ${merged.codes.length === 1 ? 'Klausur' : 'Klausuren'} geladen.` + (done ? ` Gespeicherter Stand fortgesetzt (${done} Entscheidungen) – neu beginnen über „Datei → Zurücksetzen“.` : ''), done ? 9000 : 5000);
   } catch(e){
     console.error(e);
     if (D) toast(e.message, 10000); else $('#startErr').textContent = e.message;
   }
 }
-$('#openBtn').onclick = $('#startOpen').onclick = () => $('#openFile').click();
+$('#openBtn').onclick = $('#startOpen').onclick = () => { $('#standMenu').open = false; $('#openFile').click(); };
 $('#openFile').onchange = e => { openFiles([...e.target.files]); e.target.value = ''; };
 ['dragover','dragenter'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#drop').classList.add('over'); }));
 ['dragleave','drop'].forEach(t => document.addEventListener(t, e => { e.preventDefault(); $('#drop').classList.remove('over'); }));
 document.addEventListener('drop', e => document.body.classList.contains('prepping') ? null : openFiles([...(e.dataTransfer && e.dataTransfer.files || [])].filter(f => /\.pdf$/i.test(f.name))));
-if (D) boot(D); else $('#start').style.display = 'flex';
+if (D) boot(D); else { $('#start').style.display = 'flex'; renderRecent(); }
 </script>
 <script>/* jsQR – Apache License 2.0, https://github.com/cozmo/jsQR */
 (function webpackUniversalModuleDefinition(root, factory) {

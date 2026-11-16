@@ -19,6 +19,19 @@ Werkzeuge für die KI-gestützte **sprachliche Vorkorrektur** handschriftlicher 
 | --- | --- | --- |
 | `v1.0` | 20.10.2026 | Stand des Piloten: Arbeitsfläche mit Prüfen / Bewertung / Förderung, Export mit Förderblatt; Vorkorrektur über Claude und `kw.py`. |
 
+## Neue Gestaltung (Branch `arbeitsflaeche-design`, 16.11.2026)
+
+Nur Oberfläche, Funktionen und Datenformat unverändert (alle Browser-Tests in `tests/test_touch.py` laufen für v1.0 und AIS-Version). Gespeicherte Korrekturstände bleiben gültig.
+
+- **Farben:** Korrekturrot nur noch auf dem Scan. Bedienelemente in Königsblau, Grün = angenommen/fertig, Warnrot nur für Löschen und Zurücksetzen. Ermessensfragen sind auf dem Scan jetzt violett (wie in der Liste), offene Vorschläge blasser als angenommene.
+- **Kopfzeile:** Klausurtitel vorne, Kursleiste mit einem Chip pro Code und Fortschrittsring (fertige Codes grün), feste Speicheranzeige. „Datei“-Menü bündelt Öffnen, Sichern, Laden; Zurücksetzen steht abgesetzt in einem roten Bereich.
+- **Werkzeugleiste:** Werkzeuge als zusammenhängende Gruppe mit Icons, Zoom mit −/+ und Prozentwert (startet passend zur Fensterbreite), Anzeige-Optionen und Legende unter „Ansicht“. „Finger zeichnet“ erscheint nur auf Touch-Geräten.
+- **Prüfen:** Fortschrittsbalken; Entscheiden vor allem im Schnellmenü an der Stelle, die Seitenleiste zeigt Status und klappt Zeichen/Positivkorrektur/Fehlermuster bei Bedarf auf. Liste nach Blatt gruppiert, mit Status-Icons; Filter mit Anzahl. Ist ein Code fertig, bietet die Seitenleiste „Weiter mit Code …“ und „Zur Bewertung“ an.
+- **Bewertung:** Teile aufklappbar, Teilsumme und Zahl der offenen Kriterien im Kopf, leere Felder grau.
+- **Förderung:** Empfehlungen mit ★ statt grünem Rand, doppelte Titel entfernt.
+- **Start:** Ablauf in drei Schritten, zuletzt bearbeitete Klausuren mit Fortschritt.
+- **iPad hochkant:** Seitenleiste als Blatt von unten (Griff antippen = größer/kleiner, ziehen = Höhe frei), Werkzeuge nur als Icons.
+
 ## Touch- und Stift-Bedienung (Prototyp, 15.11.2026)
 
 Umgezogen aus dem privaten Repo `schule` (dort Stand bis Branch `touch-prototyp`). Online testen: `korrekturtest/` in diesem Repo, z. B. https://flapwurp.github.io/schule-web/korrekturtest/demo.html (nur synthetische Daten).
