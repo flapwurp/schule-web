@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Von der Klausur zum Förderblatt: KI-gestützte Korrektur</title>
+<style>
+:root{
+  --bg:#e7ecf3; --paper:#fff; --ink:#1e2940; --muted:#5d6980; --line:#d6dde8; --soft:#f1f4f9;
+  --blue:#2e56c9; --blue-soft:#e5ecfc; --green:#1d8656; --green-soft:#e2f3ea; --violet:#7048b8; --violet-soft:#efe9fa;
+  --sus:#c06a12; --sus-soft:#fdf0e1; --red:#8f1010; --amber:#b26b00; --margin:#efb1b1; --rule:#c9d6ec;
+  --f:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --fh:ui-rounded,"SF Pro Rounded","Segoe UI Variable Display",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --hand:"Bradley Hand","Segoe Print","Comic Neue","Chalkboard SE","Marker Felt",cursive;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.5 var(--f);-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--blue);outline-offset:3px;border-radius:8px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 32px}
+
+/* ---------- Hero ---------- */
+.hero{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:center;min-height:min(86vh,760px);padding:40px 0 24px}
+.mark{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--muted);font-size:15px}
+.mark svg{width:30px;height:30px}
+h1{font:700 clamp(40px,5.4vw,74px)/1.02 var(--fh);letter-spacing:-.02em;margin:22px 0 22px}
+.claim{font:600 clamp(20px,2vw,27px)/1.35 var(--fh);margin:0 0 30px;color:var(--ink);max-width:560px}
+.claim span{display:block;color:var(--muted);font-weight:500}
+.pills{display:flex;flex-wrap:wrap;gap:10px}
+.pill{display:inline-flex;align-items:center;gap:9px;background:var(--paper);border-radius:999px;padding:9px 16px 9px 10px;font-size:15px;font-weight:600;box-shadow:0 1px 2px rgba(30,41,64,.08)}
+.pill i{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none}
+.pill svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.scrollhint{margin-top:44px;display:inline-flex;align-items:center;gap:10px;color:var(--muted);font-size:15px;text-decoration:none;font-weight:500}
+.scrollhint svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;animation:bob 2s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(5px)}}
+
+/* Hero-Blatt */
+.sheetwrap{position:relative;justify-self:center;width:min(100%,560px);aspect-ratio:560/620}
+.sheetwrap>svg{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 22px 40px rgba(30,41,64,.16))}
+.hw{font-family:var(--hand);font-size:25px;fill:#1f2f7a}
+.h-line{clip-path:inset(0 100% 0 0);animation:write 1.1s ease-out forwards}
+@keyframes write{to{clip-path:inset(0 0 0 0)}}
+.sug{stroke:var(--red);stroke-width:3.2;stroke-linecap:round;fill:none}
+.sug.dash{stroke-dasharray:8 6;opacity:0;animation:fadeIn .5s ease forwards}
+.sug.solid{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:draw .5s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes fadeOut{to{opacity:0}}
+.note{font:italic 20px Helvetica,Arial,sans-serif;fill:var(--red);opacity:0;animation:fadeIn .5s ease forwards}
+.pop{opacity:0;transform-box:fill-box;transform-origin:50% 0;animation:popIn .4s cubic-bezier(.2,1.4,.4,1) forwards}
+@keyframes popIn{from{opacity:0;transform:scale(.85) translateY(-6px)}to{opacity:1;transform:none}}
+.tap{transform-box:fill-box;transform-origin:center;animation:tap 1s ease forwards;opacity:0}
+@keyframes tap{0%{opacity:0;transform:scale(.6)}30%{opacity:.5;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}
+
+/* ---------- Abschnitt Ablauf ---------- */
+section{padding:56px 0}
+h2{font:700 clamp(30px,3.2vw,44px)/1.1 var(--fh);margin:0 0 6px;letter-spacing:-.01em}
+.lead{color:var(--muted);margin:0 0 26px;font-size:18px}
+.stage{background:var(--paper);border-radius:28px;box-shadow:0 1px 2px rgba(30,41,64,.06),0 24px 60px rgba(30,41,64,.1);overflow:hidden}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line)}
+.seg{display:inline-flex;background:var(--soft);border-radius:14px;padding:4px;gap:2px}
+.seg button{border:0;background:none;border-radius:11px;padding:9px 16px;font-weight:600;font-size:15px;color:var(--muted);display:inline-flex;align-items:center;gap:8px}
+.seg button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(30,41,64,.14)}
+.seg button .dot{width:10px;height:10px;border-radius:50%}
+.switch{display:inline-flex;align-items:center;gap:10px;border:0;background:none;font-weight:600;font-size:15px;color:var(--ink);padding:6px 4px}
+.switch .tr{width:46px;height:27px;border-radius:99px;background:#c8d0dc;position:relative;transition:background .2s}
+.switch .tr::after{content:"";position:absolute;left:3px;top:3px;width:21px;height:21px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.switch[aria-pressed="true"] .tr{background:var(--green)}
+.switch[aria-pressed="true"] .tr::after{transform:translateX(19px)}
+.switch svg{width:20px;height:20px;fill:none;stroke:var(--green);stroke-width:2;stroke-linejoin:round}
+.nav{margin-left:auto;display:flex;align-items:center;gap:8px}
+.nav button{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--paper);display:grid;place-items:center}
+.nav button:hover{background:var(--soft)}
+.nav button.play{width:auto;padding:0 18px 0 14px;border-radius:999px;display:inline-flex;gap:8px;font-weight:600;font-size:15px;background:var(--blue);color:#fff;border-color:var(--blue)}
+.nav svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.nav .count{font:600 15px var(--f);color:var(--muted);min-width:64px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* Bahnen */
+.lanes{padding:8px 10px 0;overflow-x:auto}
+.lanes svg{display:block;width:100%;min-width:980px;height:auto}
+.lane-bg{transition:fill .3s}
+.lane-lbl{font:700 15px var(--f);fill:var(--ink)}
+.lane-sub{font:500 12.5px var(--f);fill:var(--muted)}
+.flow{fill:none;stroke:#c3ccda;stroke-width:3;stroke-linecap:round}
+.flow-done{fill:none;stroke:var(--blue);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)}
+.loop{fill:none;stroke:var(--violet);stroke-width:3;stroke-dasharray:3 9;stroke-linecap:round;opacity:.35;transition:opacity .4s}
+.loop.on{opacity:1;stroke-width:4;animation:march 1s linear infinite}
+@keyframes march{to{stroke-dashoffset:-24}}
+.loop-lbl{font:600 13px var(--f);fill:var(--violet);opacity:.55;transition:opacity .4s}
+.loop-lbl.on{opacity:1}
+.node{cursor:pointer;transition:opacity .35s}
+.node .card{fill:#fff;stroke:var(--line);stroke-width:1.5;transition:all .3s}
+.node .ic{transition:all .3s}
+.node text{font:600 13.5px var(--f);fill:var(--ink);text-anchor:middle;pointer-events:none}
+.node .num{font:700 11.5px var(--f);fill:var(--muted)}
+.node.done .card{stroke:var(--c)}
+.node.cur .card{stroke:var(--c);stroke-width:3;filter:url(#glow)}
+.node.cur{transform-box:fill-box}
+.node.future{opacity:.55}
+.node:hover{opacity:1}
+.priv{opacity:0;transition:opacity .35s;pointer-events:none}
+.showpriv .priv{opacity:1}
+.priv text{font:700 11px var(--f);fill:#145e3c}
+.priv.warn text{fill:#8a4b00}
+.swap{animation:swapIn .5s ease both}
+@keyframes swapIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.token{transition:none}
+
+/* Ansehen-Knöpfe und Overlay */
+.looks{display:flex;gap:8px;margin-left:auto}
+.looks button,.dlook{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:9px 16px 9px 12px;font-weight:600;font-size:15px}
+.looks button:hover,.dlook:hover{background:var(--soft)}
+.looks svg,.dlook svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.looks+.nav{margin-left:0}
+.dlook{margin-top:16px;color:var(--blue);border-color:#c9d5f3}
+.stage{position:relative}
+.viewer{position:fixed;inset:16px;z-index:40;background:#fff;border-radius:22px;box-shadow:0 30px 80px rgba(30,41,64,.35);display:flex;flex-direction:column;overflow:hidden;animation:vIn .3s cubic-bezier(.2,.9,.3,1)}
+.viewer[hidden]{display:none}
+@keyframes vIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+body.vopen::after{content:"";position:fixed;inset:0;background:rgba(30,41,64,.45);z-index:39}
+.stage:fullscreen .viewer{inset:12px}
+.vhead{display:flex;align-items:center;gap:16px;padding:12px 14px 12px 18px;border-bottom:1px solid var(--line)}
+.vnote{color:var(--muted);font-size:15px;flex:1}
+.vbtn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600;font-size:14px}
+.vclose{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center}
+.vclose svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.vbody{flex:1;min-height:0;background:var(--bg);position:relative}
+.vpanel{position:absolute;inset:0;overflow:auto}
+.vpanel[hidden]{display:none}
+.blankwrap{height:100%;padding:18px}
+.blankwrap svg{display:block;width:100%;height:100%;filter:drop-shadow(0 10px 30px rgba(30,41,64,.14))}
+.blankwrap .co{opacity:0;animation:fadeIn .5s ease forwards}
+.blankwrap.nocall .co{display:none}
+#coBtn[aria-pressed="true"] .tr{background:var(--blue)}
+#vFilled{min-height:100%;display:flex;align-items:center;justify-content:center;padding:26px}
+.sheets{display:flex;gap:22px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+.sheet{margin:0;width:clamp(200px,22vw,330px);cursor:zoom-in;transition:transform .25s}
+.sheet img{width:100%;display:block;border-radius:4px;box-shadow:0 8px 26px rgba(30,41,64,.16);background:#fff}
+.sheet:hover{transform:translateY(-4px)}
+.sheet figcaption{text-align:center;font-weight:600;font-size:14px;color:var(--muted);margin-top:10px}
+.sheet.big{position:fixed;inset:80px 0 20px;width:auto;z-index:5;display:flex;flex-direction:column;align-items:center;cursor:zoom-out;transform:none;background:rgba(231,236,243,.96)}
+.sheet.big img{height:calc(100% - 34px);width:auto}
+.stage:fullscreen .sheet.big{inset:76px 12px 12px}
+#afFrame{width:100%;height:100%;border:0;display:block;background:#fff}
+/* Wer handelt */
+.actors{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:12px 24px 0;font-size:14px;font-weight:600;color:var(--muted)}
+.actors .al{font-weight:500;margin-right:4px}
+.actors span[data-a]{display:inline-flex;align-items:center;gap:7px;padding:3px 10px 3px 6px;border-radius:999px;transition:background .25s,color .25s}
+.actors span[data-a] i{width:12px;height:12px;border-radius:50%}
+.actors span[data-a].on{background:var(--soft);color:var(--ink)}
+.whorow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.whorow .arr{font-weight:700;color:var(--muted)}
+.whorow .where{font-size:15px;color:var(--muted);font-weight:500;margin-left:4px}
+/* Detail */
+.detail{display:grid;grid-template-columns:minmax(280px,400px) 1fr;gap:34px;align-items:center;padding:18px 30px 22px;border-top:1px solid var(--line);background:linear-gradient(180deg,#fbfcfe,#fff)}
+.scene{aspect-ratio:16/10;background:var(--soft);border-radius:20px;overflow:hidden;position:relative}
+.scene svg{width:100%;height:100%;display:block}
+.who{display:inline-flex;align-items:center;gap:8px;font:700 13px var(--f);padding:5px 12px 5px 8px;border-radius:999px;color:#fff}
+.who .d{width:9px;height:9px;border-radius:50%;background:#fff;opacity:.85}
+.dtitle{font:700 clamp(26px,2.6vw,36px)/1.15 var(--fh);margin:10px 0 6px}
+.dtext{font-size:19px;line-height:1.5;margin:0;max-width:620px}
+.dpriv{display:flex;gap:10px;align-items:flex-start;margin-top:16px;padding:12px 14px;border-radius:14px;background:var(--green-soft);color:#145e3c;font-size:15.5px;font-weight:500;max-width:620px;opacity:0;max-height:0;overflow:hidden;transition:opacity .3s,max-height .3s,margin .3s,padding .3s;padding-top:0;padding-bottom:0;margin-top:0}
+.dpriv.warn{background:#fff1d9;color:#7a4500}
+.showpriv .dpriv{opacity:1;max-height:140px;padding:12px 14px;margin-top:16px}
+.dpriv svg{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;stroke-linecap:round;margin-top:1px}
+.fade{animation:swapIn .45s ease both}
+
+/* Vollbild für die Präsentation */
+.stage:fullscreen{border-radius:0;display:flex;flex-direction:column;background:#fff;overflow:auto}
+.stage:fullscreen .lanes{flex:none;padding:14px 28px 0}
+.stage:fullscreen .lanes svg{max-height:52vh}
+.stage:fullscreen .detail{flex:1;padding:18px 48px 28px}
+.stage:fullscreen .dtext{font-size:22px;max-width:760px}
+.stage:fullscreen .dpriv{font-size:18px;max-width:760px}
+/* Szenen-Animationen */
+.sc *{transform-box:fill-box}
+.a-draw{stroke-dasharray:var(--l,300);stroke-dashoffset:var(--l,300);animation:draw .9s ease forwards}
+.a-in{opacity:0;animation:fadeIn .5s ease forwards}
+.a-out{animation:fadeOut .4s ease forwards}
+.a-pop{opacity:0;transform-origin:center;animation:popIn .45s cubic-bezier(.2,1.4,.4,1) forwards}
+.a-rot{transform-origin:center;animation:straighten 1.1s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes straighten{from{transform:rotate(-9deg) scale(.94)}to{transform:none}}
+.a-slide{opacity:0;animation:slideR .7s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes slideR{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
+.a-fly{animation:fly 1.3s cubic-bezier(.5,0,.3,1) forwards}
+@keyframes fly{0%{transform:none;opacity:1}80%{opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.4);opacity:0}}
+.a-sweep{animation:sweep 1.8s ease-in-out infinite}
+@keyframes sweep{0%{transform:translateY(0)}50%{transform:translateY(var(--sy,120px))}100%{transform:translateY(0)}}
+.a-grow{transform-origin:left center;transform:scaleX(0);animation:grow .7s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes grow{to{transform:scaleX(1)}}
+.a-spin{transform-origin:center;animation:spin 3.5s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.a-pulse{transform-origin:center;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.mono{font:600 12.5px ui-monospace,Menlo,Consolas,monospace}
+.lbl{font:700 13px var(--f)}
+.sm{font:600 11.5px var(--f)}
+
+/* Grundsätze */
+.principles{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.pr{background:var(--paper);border-radius:24px;padding:28px 26px 26px;position:relative;overflow:hidden}
+.pr svg.big{width:64px;height:64px;margin-bottom:14px}
+.pr h3{font:700 24px/1.2 var(--fh);margin:0 0 8px}
+.pr p{margin:0;color:var(--muted);font-size:16.5px}
+.nots{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.nots span{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--red);background:#fbeaea;border-radius:999px;padding:4px 12px 4px 8px}
+.nots svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
+footer{padding:20px 0 50px;color:var(--muted);font-size:14px}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr;min-height:0;padding-top:28px}
+  .sheetwrap{width:min(100%,460px)}
+  .detail{grid-template-columns:1fr;padding:22px}
+  .principles{grid-template-columns:1fr}
+  .nav{margin-left:0}
+  .wrap{padding:0 18px}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-delay:0s!important;transition:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#1e2940" flood-opacity=".16"/></filter>
+    <symbol id="logo" viewBox="0 0 40 40"><rect x="6" y="3.5" width="25" height="33" rx="3.5" fill="#fff" stroke="#c7d1e0" stroke-width="1.6"/><path d="M11 12h15M11 17.5h15M11 23h11M11 28.5h8" stroke="#b9c9e6" stroke-width="1.6" stroke-linecap="round"/><path d="M24.5 3.5v33" stroke="#efb1b1" stroke-width="1.4"/><path d="M17.5 24.5l5.5 5.5 12-15" fill="none" stroke="#8f1010" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <!-- ===================== Hero ===================== -->
+  <header class="hero">
+    <div>
+      <div class="mark"><svg><use href="#logo"/></svg>KI-gestützte Korrektur am Gymnasium Norf</div>
+      <h1>Von der Klausur<br>zum Förderblatt</h1>
+      <p class="claim">Die KI schlägt vor.<span>Die Lehrkraft entscheidet.</span></p>
+      <div class="pills">
+        <span class="pill"><i style="background:var(--sus)"><svg viewBox="0 0 24 24"><path d="M5 6h14v12H5z"/><path d="M8 10h3M8 14h8"/></svg></i>Code statt Name</span>
+        <span class="pill"><i style="background:var(--blue)"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></i>Jede Anstreichung geprüft</span>
+        <span class="pill"><i style="background:var(--green)"><svg viewBox="0 0 24 24"><path d="M12 19V7M7 11l5-5 5 5"/></svg></i>Förderung statt Berichtigung</span>
+      </div>
+      <a class="scrollhint" href="#ablauf"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>Der Ablauf Schritt für Schritt</a>
+    </div>
+    <div class="sheetwrap" aria-label="Animation: Ein Vorschlag wird auf einem Klausurblatt angenommen">
+      <svg id="heroSvg" viewBox="0 0 560 620"></svg>
+    </div>
+  </header>
+
+  <!-- ===================== Ablauf ===================== -->
+  <section id="ablauf">
+    <h2>Der Ablauf</h2>
+    <p class="lead">Wo was passiert und wer handelt, vom Schreiben bis zur Rückgabe.</p>
+    <div class="stage" id="stage">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="KI-Dienst">
+          <button data-route="ais" class="on"><span class="dot" style="background:var(--green)"></span>AIS.chat</button>
+          <button data-route="claude"><span class="dot" style="background:var(--violet)"></span>Claude</button>
+        </div>
+        <button class="switch" id="privBtn" aria-pressed="false"><span class="tr"></span><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.3-7 10-3.8-1.7-7-5-7-10V6z"/></svg>Datenschutz</button>
+        <div class="looks">
+          <button data-open="blank" title="Klausurbogen ansehen (B)"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1.5"/><rect x="3.5" y="1.5" width="3" height="3" fill="currentColor" stroke="none"/><rect x="17.5" y="19.5" width="3" height="3" fill="currentColor" stroke="none"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>Klausurbogen</button>
+          <button data-open="af" title="Arbeitsfläche live ansehen (A)"><svg viewBox="0 0 24 24"><rect x="2.5" y="4" width="19" height="15" rx="2"/><path d="M2.5 8h19M14 8v11"/><path d="M5 12h6M5 15h4" /></svg>Arbeitsfläche</button>
+        </div>
+        <div class="nav">
+          <button id="prev" aria-label="Zurück"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <span class="count" id="count">1 / 10</span>
+          <button id="next" aria-label="Weiter"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+          <button id="fs" aria-label="Vollbild" title="Vollbild (V)"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+          <button class="play" id="play"><svg viewBox="0 0 24 24" id="playIc"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg><span id="playTxt">Abspielen</span></button>
+        </div>
+      </div>
+      <div class="actors" aria-label="Wer handelt"><span class="al">Farbe der Station = wer handelt</span>
+        <span data-a="sus"><i style="background:var(--sus)"></i>Schülerinnen und Schüler</span><span data-a="lk"><i style="background:var(--blue)"></i>Lehrkraft</span><span data-a="ki"><i style="background:var(--violet)"></i>KI</span><span data-a="auto"><i style="background:var(--green)"></i>Arbeitsfläche (automatisch)</span></div>
+      <div class="lanes"><svg id="lanes" viewBox="0 0 1310 374" role="img" aria-label="Ablaufdiagramm"></svg></div>
+      <div class="viewer" id="viewer" hidden>
+        <div class="vhead">
+          <div class="seg"><button data-v="blank">Leerer Bogen</button><button data-v="filled">Ausgefüllte Bögen</button><button data-v="af">Arbeitsfläche</button></div>
+          <span class="vnote" id="vNote"></span>
+          <button class="switch" id="coBtn" aria-pressed="true" title="Erklärungen ein- und ausblenden (E)"><span class="tr"></span>Erklärungen</button>
+          <button class="vbtn" id="vReset" hidden>Demo zurücksetzen</button>
+          <button class="vclose" id="vClose" aria-label="Schließen (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div class="vbody">
+          <div class="vpanel" data-p="blank"><div id="vBlank" class="blankwrap"></div></div>
+          <div class="vpanel" data-p="filled" hidden><div id="vFilled"></div></div>
+          <div class="vpanel" data-p="af" hidden><iframe id="afFrame" title="Arbeitsfläche (Demo)"></iframe></div>
+        </div>
+      </div>
+      <div class="detail" id="detail">
+        <div class="scene"><svg id="scene" viewBox="0 0 320 200"></svg></div>
+        <div id="dbody"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== Grundsätze ===================== -->
+  <section>
+    <h2>Drei Grundsätze</h2>
+    <p class="lead">Darauf ist das Verfahren gebaut.</p>
+    <div class="principles">
+      <div class="pr">
+        <svg class="big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#e5ecfc"/><path d="M18 40c5-3 10-3 14 0s9 3 14 0" fill="none" stroke="#8f1010" stroke-width="3.5" stroke-linecap="round"/><path d="M22 27l7 7 14-15" fill="none" stroke="#2e56c9" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>Vorschlag statt Urteil</h3>
+        <p>Die KI macht nur Vorschläge. Jede Anstreichung wird von der Lehrkraft angenommen, geändert oder verworfen.</p>
+        <div class="nots"><span><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>keine Punkte</span><span><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>keine Noten</span></div>
+      </div>
+      <div class="pr">
+        <svg class="big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#fdf0e1"/><rect x="18" y="16" width="28" height="34" rx="3" fill="#fff" stroke="#c06a12" stroke-width="2.5"/><rect x="22" y="21" width="10" height="10" fill="none" stroke="#1e2940" stroke-width="2"/><rect x="25" y="24" width="4" height="4" fill="#1e2940"/><text x="40" y="30" font-family="system-ui" font-weight="800" font-size="9" fill="#c06a12" text-anchor="middle">27</text><path d="M23 38h18M23 43h12" stroke="#c9d6ec" stroke-width="2.5" stroke-linecap="round"/></svg>
+        <h3>Code statt Name</h3>
+        <p>Auf den Bögen steht nur ein Code, der bei jeder Klausur neu verteilt wird. Wer hinter welchem Code steckt, weiß nur die Lehrkraft.</p>
+      </div>
+      <div class="pr">
+        <svg class="big" viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#e2f3ea"/><rect x="20" y="15" width="24" height="34" rx="3" fill="#fff" stroke="#1d8656" stroke-width="2.5"/><path d="M25 24h14M25 31h14M25 38h9" stroke="#1d8656" stroke-width="2.5" stroke-linecap="round"/><path d="M44 42l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6-4.5-4 6-1z" fill="#f2b705" stroke="#fff" stroke-width="1.5" transform="translate(-2 -12) scale(.9)"/></svg>
+        <h3>Förderung statt Berichtigung</h3>
+        <p>Statt den Text abzuschreiben, bekommen alle Übungen zu ihren drei häufigsten Fehlern, im passenden Niveau.</p>
+      </div>
+    </div>
+  </section>
+  <footer>Stand November 2026</footer>
+</div>
+
+<script type="application/json" id="demoMeta">/*META*/</script>
+<script type="application/json" id="afTpl">/*AFTPL*/</script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const NS = 'http://www.w3.org/2000/svg';
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ===================== Hero-Animation ===================== */
+const HERO_TXT = ['In the article the author', 'explains how teenagers', 'finds their identity. He', 'say that social media', 'have a big influence', 'on young people.'];
+function hero(){
+  const s = $('#heroSvg'), L0 = 150, LH = 58, MX = 410;
+  let h = `<rect x="20" y="20" width="520" height="580" rx="10" fill="#fff"/>
+    <g fill="#1e2940"><rect x="44" y="44" width="40" height="40" fill="none" stroke="#1e2940" stroke-width="3"/><rect x="54" y="54" width="20" height="20"/></g>
+    <rect x="482" y="44" width="34" height="34" fill="#1e2940"/><rect x="482" y="548" width="34" height="34" fill="#1e2940"/><rect x="44" y="548" width="34" height="34" fill="#1e2940"/>
+    <text x="100" y="72" font-family="system-ui" font-weight="800" font-size="22" fill="#1e2940">Code 27</text><text x="100" y="92" font-family="system-ui" font-size="13" fill="#5d6980">Blatt 1</text>
+    <line x1="${MX}" y1="110" x2="${MX}" y2="530" stroke="#efb1b1" stroke-width="2"/>`;
+  for (let k = 0; k < 7; k++) h += `<line x1="58" y1="${L0 + k*LH}" x2="${MX}" y2="${L0 + k*LH}" stroke="#c9d6ec" stroke-width="1.6"/>`;
+  HERO_TXT.forEach((t, i) => h += `<text class="hw h-line" x="64" y="${L0 + (i+1)*LH - 14}" style="animation-delay:${.15 + i*.32}s">${t}</text>`);
+  h += `<g id="heroDyn"></g>`;
+  s.innerHTML = h;
+  const dyn = $('#heroDyn');
+  // Ablauf: Vorschlag „finds“ (Zeile 3) → Schnellmenü → Annehmen → durchgezogen + Randnotiz; dann „say“ (Zeile 4)
+  const marks = [{ line: 3, x0: 64, x1: 124, note: 'G (find)', y: L0 + 3*LH - 6 }, { line: 4, x0: 64, x1: 106, note: 'G (says)', y: L0 + 4*LH - 6 }];
+  let t = 0; const at = (ms, fn) => setTimeout(fn, (t += ms));
+  function run(){
+    dyn.innerHTML = ''; t = 0;
+    marks.forEach((m, i) => {
+      at(i ? 900 : 2600, () => dyn.insertAdjacentHTML('beforeend', `<line class="sug dash" id="d${i}" x1="${m.x0}" y1="${m.y}" x2="${m.x1}" y2="${m.y}"/>
+        <text class="note" id="n${i}" x="${MX + 12}" y="${m.y - 8}" style="opacity:0;animation:fadeIn .4s ease forwards;fill-opacity:.55;font-style:italic">${m.note}</text>`));
+      at(700, () => dyn.insertAdjacentHTML('beforeend', `<g class="pop" id="p${i}"><rect x="${m.x0 - 6}" y="${m.y + 14}" width="262" height="66" rx="12" fill="#fff" stroke="#d6dde8"/>
+        <rect x="${m.x0 + 6}" y="${m.y + 26}" width="128" height="42" rx="9" fill="#1d8656"/><path d="M${m.x0 + 22} ${m.y + 47}l6 6 11-12" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        <text x="${m.x0 + 46}" y="${m.y + 53}" font-family="system-ui" font-weight="700" font-size="15" fill="#fff">Annehmen</text>
+        <rect x="${m.x0 + 142}" y="${m.y + 26}" width="108" height="42" rx="9" fill="#fff" stroke="#f0c4c0"/><text x="${m.x0 + 196}" y="${m.y + 53}" font-family="system-ui" font-weight="700" font-size="15" fill="#b42318" text-anchor="middle">Verwerfen</text></g>`));
+      at(1000, () => dyn.insertAdjacentHTML('beforeend', `<circle class="tap" cx="${m.x0 + 58}" cy="${m.y + 47}" r="22" fill="#1d8656"/>`));
+      at(450, () => { const p = $('#p'+i); if (p) p.style.animation = 'fadeOut .3s ease forwards'; const d = $('#d'+i); if (d) d.style.animation = 'fadeOut .3s ease forwards';
+        const n = $('#n'+i); if (n){ n.style.fillOpacity = 1; n.style.fontStyle = 'normal'; }
+        const len = m.x1 - m.x0; dyn.insertAdjacentHTML('beforeend', `<line class="sug solid" style="--len:${len}" x1="${m.x0}" y1="${m.y}" x2="${m.x1}" y2="${m.y}"/>`); });
+    });
+    at(4200, run);
+  }
+  if (RM){ dyn.innerHTML = marks.map(m => `<line class="sug" x1="${m.x0}" y1="${m.y}" x2="${m.x1}" y2="${m.y}"/><text class="note" style="opacity:1" x="${MX + 12}" y="${m.y - 8}">${m.note}</text>`).join(''); }
+  else run();
+}
+
+/* ===================== Ablauf-Daten ===================== */
+// Zeilen = Orte (wo es passiert). Farbe der Station = wer handelt.
+const LANES = [
+  { id: 'pap', name: 'Papier', sub: 'Bogen, Scan, Ausdruck', c: '#a8916b', bg: '#f8f5f0' },
+  { id: 'af', name: 'Arbeitsfläche', sub: 'lokal im Browser', c: 'var(--green)', bg: '#f1f9f4' },
+  { id: 'ki', name: 'KI', sub: '', c: 'var(--violet)', bg: '#f6f2fc' }];
+const ACT = {
+  sus: { n: 'Schülerinnen und Schüler', c: 'var(--sus)' },
+  lk: { n: 'Lehrkraft', c: 'var(--blue)' },
+  auto: { n: 'Arbeitsfläche (automatisch)', c: 'var(--green)' },
+  ki: { n: 'KI', c: 'var(--violet)' }};
+const LOCAL = 'Läuft lokal im Browser. Nichts wird hochgeladen.';
+const COMMON_A = [
+  { lane: 'pap', who: ['sus'], t: 'Klausur schreiben', look: ['blank', 'Klausurbogen ansehen'], short: ['Klausur', 'schreiben'], ic: 'pen', x: 'Handschriftlich auf Klausurbögen mit Code, QR-Code und Ankerpunkten. Ein Namensfeld gibt es nicht.', scene: 'write',
+    p: 'Nur der Code steht auf dem Bogen. Die Liste Code ↔ Name hat allein die Lehrkraft, auf Papier. Codes werden jedes Mal neu verteilt.' },
+  { lane: 'pap', who: ['lk'], t: 'Stapel scannen', look: ['filled', 'Ausgefüllte Bögen ansehen'], short: ['Stapel', 'scannen'], ic: 'scan', x: 'Der ganze Kurs als ein PDF, gescannt am Kopierer der Schule.', scene: 'scan',
+    p: 'Der Scan enthält keine Namen, nur Codes.' },
+  { lane: 'af', who: ['auto'], t: 'Einlesen', short: ['Scan', 'einlesen'], ic: 'align', x: 'Seiten werden über die Ankerpunkte ausgerichtet, per QR-Code den Codes zugeordnet und in Schreibzeilen zerlegt.', scene: 'align', p: LOCAL }];
+const ROUTES = {
+  ais: { ki: 'AIS.chat', kisub: 'Landeslösung NRW, EU', steps: [
+    { lane: 'ki', who: ['ki'], t: 'Handschrift lesen', short: ['Handschrift', 'lesen'], ic: 'read', x: 'AIS.chat schreibt die Schreibzeilen Wort für Wort ab, mit allen Fehlern. Unsicher Gelesenes wird markiert.', scene: 'aisread',
+      p: 'An AIS.chat gehen nur Ausschnitte der Schreibzeilen, ohne Namen und ohne Code-Liste. Landeslösung des MSB NRW, Betrieb in der EU.' },
+    { lane: 'ki', who: ['ki'], t: 'Vorkorrigieren', short: ['Sprachlich', 'vorkorrigieren'], ic: 'mark', x: 'Aus der Abschrift entsteht eine Liste sprachlicher Korrekturvorschläge, nach dem Korrekturprofil der Lehrkraft. Ergebnis: reiner Text.', scene: 'aiscorrect',
+      p: 'Die Korrektur arbeitet nur mit der Abschrift. Betrieb in der EU.' },
+    { lane: 'af', who: ['auto'], t: 'Vorschläge platzieren', look: ['af', 'In der Arbeitsfläche ansehen'], short: ['Vorschläge', 'platzieren'], ic: 'place', x: 'Die Antworten werden eingefügt. Die Arbeitsfläche legt jede Anstreichung an die richtige Stelle im Scan.', scene: 'place', p: LOCAL }] },
+  claude: { ki: 'Claude', kisub: 'Anthropic, USA', steps: [
+    { lane: 'ki', who: ['ki'], t: 'Handschrift lesen', short: ['Handschrift', 'lesen'], ic: 'read', x: 'Claude liest die Schreibzeilen Wort für Wort, auch bei schwer lesbarer Schrift. Unsicher Gelesenes wird markiert.', scene: 'read',
+      p: 'Die Scans (mit Codes, ohne Namen) gehen an einen Dienst mit Sitz in den USA. Die datenschutzrechtliche Freigabe für die Schule steht noch aus.', warn: true },
+    { lane: 'ki', who: ['ki'], t: 'Vorkorrigieren', short: ['Sprachlich', 'vorkorrigieren'], ic: 'mark', x: 'Sprachliche Anstreichungen nach dem Korrekturprofil der Lehrkraft. Dazu ein Übungspool aus den typischen Fehlern des Kurses.', scene: 'correct',
+      p: 'Wie im vorigen Schritt: Verarbeitung in den USA, Freigabe noch offen.', warn: true },
+    { lane: 'af', who: ['auto'], t: 'Vorschläge platzieren', look: ['af', 'In der Arbeitsfläche ansehen'], short: ['Vorschläge', 'platzieren'], ic: 'place', x: 'Die Vorschläge kommen als Vorkorrektur-Datei zurück. Die Arbeitsfläche zeigt jede Anstreichung an der richtigen Stelle im Scan.', scene: 'place', p: LOCAL }] } };
+const COMMON_B = [
+  { lane: 'af', who: ['lk'], t: 'Prüfen', look: ['af', 'In der Arbeitsfläche ansehen'], short: ['Vorschläge', 'prüfen'], ic: 'check', x: 'In der Arbeitsfläche: jeden Vorschlag annehmen, ändern oder verwerfen. Eigene Anstreichungen ergänzen, mit Maus oder mit dem Stift am iPad.', scene: 'review', p: LOCAL },
+  { lane: 'af', who: ['lk'], t: 'Bewerten', look: ['af', 'In der Arbeitsfläche ansehen'], short: ['Punkte', 'vergeben'], ic: 'grade', x: 'Punkte nach dem Erwartungshorizont und die Note vergibt allein die Lehrkraft.', scene: 'grade', p: LOCAL },
+  { lane: 'af', who: ['lk'], t: 'Förderblatt', look: ['af', 'In der Arbeitsfläche ansehen'], short: ['Förderblatt', 'erstellen'], ic: 'star', x: 'Die Arbeitsfläche schlägt Übungen zu den drei häufigsten Fehlern jeder Arbeit vor, im Niveau passend zur Fehlerdichte. Die Lehrkraft wählt aus.', scene: 'foerder',
+    p: 'Die Übungen sind neu formuliert, nie Sätze aus den Klausuren.' },
+  { lane: 'pap', who: ['lk', 'sus'], t: 'Rückgabe', short: ['Rückgabe', 'auf Papier'], ic: 'give', x: 'Ausgedruckt: die korrigierte Klausur, der Bewertungsbogen und das Förderblatt mit Lösungen.', scene: 'return',
+    p: 'Erst hier kommen Arbeit und Name wieder zusammen: durch die Lehrkraft, auf Papier.' },
+  { loop: true, lane: 'ki', who: ['lk', 'ki'], t: 'Lernschleife', short: [], ic: 'loop', x: 'Was die Lehrkraft verwirft, ändert oder ergänzt, macht das Korrekturprofil beim nächsten Mal genauer. Geändert wird erst nach ihrer Freigabe.', scene: 'loop',
+    p: 'Ins Profil kommen nur Regeln: keine Namen, keine Codes, keine Schülertexte.' }];
+const PLACE = { pap: 'auf Papier', af: 'in der Arbeitsfläche', ki: 'bei der KI' };
+
+const ICONS = {
+  pen: '<path d="M4 20l1-4L16 5l3 3L8 19z"/><path d="M14 7l3 3"/>',
+  scan: '<rect x="3" y="11" width="18" height="8" rx="2"/><path d="M7 11V4h10v7"/><path d="M3 15h18"/>',
+  align: '<rect x="5" y="5" width="14" height="14" rx="1"/><rect x="3" y="3" width="4" height="4" fill="currentColor"/><rect x="17" y="17" width="4" height="4" fill="currentColor"/><path d="M8 10h8M8 14h6"/>',
+  place: '<path d="M4 7h16M4 12h16M4 17h10"/><path d="M5 9.5h6" stroke="#8f1010"/><path d="M14 19.5h5" stroke="#8f1010"/>',
+  read: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/><path d="M3 12h18" stroke-dasharray="2 2"/>',
+  mark: '<path d="M4 8h16M4 14h16"/><path d="M6 10h7M9 16h8" stroke="#8f1010"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  grade: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 9h4M8 13h4M8 17h4M15 9h1M15 13h1"/><path d="M14 17h3"/>',
+  star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.2 4.1 1 5.8L12 16.9l-5.3 2.7 1-5.8-4.2-4.1 5.9-.9z"/>',
+  give: '<rect x="6" y="3" width="12" height="15" rx="1.5"/><path d="M9 7h6M9 10h6M9 13h3"/><path d="M3 21c3-2 6-2 9-1s5 1 9-1"/>',
+  loop: '<path d="M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3"/><path d="M6 21v-4h4"/>'};
+
+/* ===================== Bahnen zeichnen ===================== */
+const G = { x0: 270, dx: 106, top: 34, lh: 98, w: 96, h: 64 };
+let route = 'ais', step = 0, steps = [], priv = false, timer = null, tokenL = 0;
+const laneY = id => G.top + LANES.findIndex(l => l.id === id) * G.lh + G.lh / 2;
+const actC = s => ACT[s.who[0]].c;
+function buildSteps(){ steps = COMMON_A.concat(ROUTES[route].steps, COMMON_B); }
+function pos(i){ return { x: G.x0 + i * G.dx, y: laneY(steps[i].lane) }; }
+
+function drawLanes(swapOnly){
+  const svg = $('#lanes'), R = ROUTES[route];
+  let h = '';
+  LANES.forEach((l, i) => {
+    const y = G.top + i * G.lh, cy = y + G.lh / 2;
+    h += `<rect class="lane-bg" x="8" y="${y + 3}" width="1294" height="${G.lh - 6}" rx="16" fill="${l.bg}"/>
+      <rect x="8" y="${y + 3}" width="6" height="${G.lh - 6}" rx="3" fill="${l.c}"/>
+      <text class="lane-lbl" x="28" y="${cy - 10}">${l.id === 'ki' ? 'KI: ' + R.ki : l.name}</text>
+      <text class="lane-sub" x="28" y="${cy + 8}">${l.id === 'ki' ? R.kisub : l.sub}</text>`;
+    const badge = { pap: ['Namensliste: nur Lehrkraft', 0], af: ['kein Upload', 0], ki: route === 'claude' ? ['Freigabe offen', 1] : ['Betrieb in der EU', 0] }[l.id];
+    h += `<g class="priv ${badge[1] ? 'warn' : ''}" transform="translate(28 ${cy + 16})"><rect width="${badge[0].length * 6.3 + 20}" height="20" rx="10" fill="${badge[1] ? '#fff1d9' : '#e2f3ea'}"/><text x="10" y="14">${badge[0]}</text></g>`;
+  });
+  // Fluss durch alle Stationen (ohne Lernschleife)
+  const n = steps.filter(s => !s.loop).length;
+  let d = '', segs = [];
+  for (let i = 0; i < n; i++){ const p = pos(i);
+    if (!i){ d = `M${p.x} ${p.y}`; segs.push(`M${p.x} ${p.y}`); continue; }
+    const q = pos(i-1), mx = (q.x + p.x) / 2, c = `C${mx} ${q.y} ${mx} ${p.y} ${p.x} ${p.y}`; d += ' ' + c; segs.push(`M${q.x} ${q.y} ${c}`); }
+  h += `<path class="flow" d="${d}"/><path class="flow-done" id="flowDone" d="${d}"/>`;
+  // Lernschleife: Prüfen (Arbeitsfläche) → unter der KI-Zeile → Vorkorrigieren (KI)
+  const pr = pos(steps.findIndex(s => s.t === 'Prüfen')), kp = pos(steps.findIndex(s => s.t === 'Vorkorrigieren')), by = G.top + 3 * G.lh + 20;
+  const lp = `M${pr.x} ${pr.y + G.h/2} L${pr.x} ${by - 14} Q${pr.x} ${by} ${pr.x - 14} ${by} L${kp.x + 14} ${by} Q${kp.x} ${by} ${kp.x} ${by - 14} L${kp.x} ${kp.y + G.h/2 + 4}`;
+  h += `<path class="loop" id="loopPath" d="${lp}"/><path d="M${kp.x - 7} ${kp.y + G.h/2 + 14} L${kp.x} ${kp.y + G.h/2 + 4} L${kp.x + 7} ${kp.y + G.h/2 + 14}" fill="none" stroke="var(--violet)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="loop" id="loopHead" style="stroke-dasharray:none"/>
+    <text class="loop-lbl" id="loopLbl" x="${(pr.x + kp.x) / 2}" y="${by + 17}" text-anchor="middle">Lernschleife: Korrekturstand → Korrekturprofil</text>`;
+  // Stationen: Farbe = wer handelt
+  steps.forEach((s, i) => { if (s.loop) return; const p = pos(i), c = actC(s), sw = i >= 3 && i <= 5, x0 = p.x - G.w/2, y0 = p.y - G.h/2;
+    h += `<g class="node${sw && swapOnly ? ' swap' : ''}" data-i="${i}" style="--c:${c}${sw && swapOnly ? `;animation-delay:${(i-3)*.08}s` : ''}" tabindex="0" role="button" aria-label="${i+1}. ${s.t}, ${s.who.map(w => ACT[w].n).join(', ')}">
+      <rect class="card" x="${x0}" y="${y0}" width="${G.w}" height="${G.h}" rx="15"/>
+      <rect x="${x0 + 10}" y="${y0 + G.h - 4}" width="${G.w - 20}" height="3" rx="1.5" fill="${c}" opacity=".85"/>
+      <circle class="ic" cx="${x0 + 16}" cy="${y0 + 16}" r="11" fill="${c}"/>
+      <text class="num" x="${x0 + 16}" y="${y0 + 20}" style="fill:#fff">${i+1}</text>
+      ${s.who[1] ? `<circle cx="${x0 + 34}" cy="${y0 + 16}" r="6" fill="${ACT[s.who[1]].c}" stroke="#fff" stroke-width="2"/>` : ''}
+      <svg x="${x0 + G.w - 27}" y="${y0 + 6}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[s.ic]}</svg>
+      <text x="${p.x}" y="${p.y + 9}">${s.short[0]}</text><text x="${p.x}" y="${p.y + 24}" style="font-weight:500;fill:var(--muted);font-size:12px">${s.short[1]}</text>
+    </g>`; });
+  h += `<g id="token" class="token"><rect x="-13" y="-17" width="26" height="34" rx="3" fill="#fff" stroke="#1e2940" stroke-width="2"/><path d="M-7 -7h14M-7 -1h14M-7 5h9" stroke="#c9d6ec" stroke-width="2"/><path d="M-8 9h10" stroke="#8f1010" stroke-width="2.5" stroke-linecap="round"/></g>`;
+  svg.innerHTML = h;
+  const tmp = document.createElementNS(NS, 'path'); svg.appendChild(tmp);
+  let acc = 0; G.lens = [0];
+  segs.slice(1).forEach(sd => { tmp.setAttribute('d', sd); acc += tmp.getTotalLength(); G.lens.push(acc); });
+  tmp.remove(); G.total = acc;
+  const fd = $('#flowDone'); fd.style.strokeDasharray = acc; fd.style.strokeDashoffset = acc - (G.lens[Math.min(step, n - 1)] || 0);
+  svg.querySelectorAll('.node').forEach(g => { g.onclick = () => go(+g.dataset.i, true); g.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(+g.dataset.i, true); } }; });
+  placeToken(G.lens[Math.min(step, n - 1)], true);
+}
+function placeToken(L, instant){
+  const path = $('#flowDone'), tk = $('#token'); if (!path || !tk) return;
+  const from = tokenL, to = L, t0 = performance.now(), dur = instant || RM ? 0 : 900;
+  const ease = x => x < .5 ? 4*x*x*x : 1 - Math.pow(-2*x + 2, 3) / 2;
+  cancelAnimationFrame(placeToken.raf);
+  const f = now => { const k = dur ? Math.min(1, (now - t0) / dur) : 1, l = from + (to - from) * ease(k), p = path.getPointAtLength(l);
+    tk.setAttribute('transform', `translate(${p.x} ${p.y - G.h/2 - 20}) rotate(${(to - from) * (1 - k) * .02})`); tokenL = l; if (k < 1) placeToken.raf = requestAnimationFrame(f); };
+  placeToken.raf = requestAnimationFrame(f);
+}
+
+/* ===================== Szenen ===================== */
+const sheet = (x, y, w, h, o = {}) => {
+  let s = `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="#fff" stroke="#d6dde8" stroke-width="1.2"/>`;
+  if (o.anchors) [[x+5,y+5],[x+w-12,y+5],[x+5,y+h-12],[x+w-12,y+h-12]].forEach(([a,b]) => s += `<rect class="${o.anchors}" x="${a}" y="${b}" width="7" height="7" fill="#1e2940"/>`);
+  if (o.code) s += `<text x="${x+16}" y="${y+14}" class="sm" fill="#1e2940" style="font-size:9px;font-weight:800">Code ${o.code}</text>`;
+  if (o.margin) s += `<line x1="${x + w*.74}" y1="${y+18}" x2="${x + w*.74}" y2="${y+h-8}" stroke="#efb1b1" stroke-width="1.2"/>`;
+  const n = o.lines || 0; for (let i = 0; i < n; i++){ const ly = y + 30 + i * ((h - 40) / n);
+    s += `<line x1="${x+8}" y1="${ly}" x2="${x + (o.margin ? w*.74 : w-8)}" y2="${ly}" stroke="#c9d6ec" stroke-width="1"/>`; }
+  return s; };
+const squig = (x, y, w, cls = '', delay = 0, col = '#1f2f7a') => { let d = `M${x} ${y}`; for (let i = 0; i < w; i += 9) d += ` q3 -${5 + (i*7)%4} 5 0 t4 0`;
+  return `<path class="${cls}" style="--l:${w*2.2};animation-delay:${delay}s" d="${d}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linecap="round"/>`; };
+const qr = (x, y, s) => `<rect x="${x}" y="${y}" width="${s}" height="${s}" fill="#fff" stroke="#1e2940" stroke-width="1.4"/><rect x="${x+s*.2}" y="${y+s*.2}" width="${s*.25}" height="${s*.25}" fill="#1e2940"/><rect x="${x+s*.55}" y="${y+s*.55}" width="${s*.25}" height="${s*.25}" fill="#1e2940"/><rect x="${x+s*.58}" y="${y+s*.2}" width="${s*.15}" height="${s*.15}" fill="#1e2940"/>`;
+const chip = (x, y, t, bg, fg, cls = 'a-pop', d = 0) => `<g class="${cls}" style="animation-delay:${d}s"><rect x="${x}" y="${y}" width="${t.length * 6.6 + 18}" height="22" rx="11" fill="${bg}"/><text x="${x + 9}" y="${y + 15}" class="sm" fill="${fg}">${t}</text></g>`;
+const ul = (x, y, w, d, dash) => `<line class="${dash ? 'a-in' : 'a-draw'}" style="--l:${w};animation-delay:${d}s" x1="${x}" y1="${y}" x2="${x + w}" y2="${y}" stroke="#8f1010" stroke-width="2.4" stroke-linecap="round" ${dash ? 'stroke-dasharray="5 4" opacity=".7"' : ''}/>`;
+const mnote = (x, y, t, d) => `<text class="a-in" style="animation-delay:${d}s;font:italic 10px Helvetica,Arial,sans-serif" x="${x}" y="${y}" fill="#8f1010">${t}</text>`;
+
+const SCENES = {
+  write: () => { let s = `<g class="a-pop">${sheet(108, 18, 104, 166, { anchors: '', code: '27', lines: 8, margin: 1 })}${qr(178, 24, 22)}</g>`;
+    for (let i = 0; i < 6; i++) s += squig(118, 50 + i * 15.8, 50 + (i * 13) % 26, 'a-draw', .4 + i * .35);
+    s += `<g class="a-in" style="animation-delay:2.6s"><path d="M228 140l22-22 7 7-22 22-9 2z" fill="#fff" stroke="#c06a12" stroke-width="2" stroke-linejoin="round"/></g>`;
+    s += chip(20, 30, 'kein Name', '#fdf0e1', '#8a4b00', 'a-pop', 1.2) + chip(20, 58, 'Code 27', '#fff', '#1e2940', 'a-pop', 1.5);
+    return s; },
+  scan: () => { let s = '';
+    for (let i = 3; i >= 0; i--) s += `<g transform="translate(${i*5} ${-i*4})">${sheet(60, 50, 80, 110, { lines: 6 })}</g>`;
+    s += `<rect class="a-sweep" style="--sy:104px" x="58" y="34" width="100" height="6" rx="3" fill="#2e56c9" opacity=".55"/>`;
+    s += `<path class="a-draw" style="--l:60;animation-delay:.6s" d="M172 105h46" stroke="#5d6980" stroke-width="2.5" fill="none" stroke-linecap="round"/><path class="a-in" style="animation-delay:1.2s" d="M212 98l8 7-8 7" stroke="#5d6980" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    s += `<g class="a-pop" style="animation-delay:1.3s"><path d="M232 66h44l16 16v64h-60z" fill="#fff" stroke="#2e56c9" stroke-width="2"/><path d="M276 66v16h16" fill="none" stroke="#2e56c9" stroke-width="2"/><text x="262" y="118" text-anchor="middle" class="lbl" fill="#2e56c9">PDF</text><text x="262" y="166" text-anchor="middle" class="sm" fill="#5d6980">ganzer Kurs</text></g>`;
+    return s; },
+  align: () => { let s = `<g class="a-rot">${sheet(40, 26, 100, 148, { anchors: 'a-pulse', lines: 7, margin: 1 })}${qr(108, 30, 20)}`;
+    for (let i = 0; i < 5; i++) s += squig(50, 58 + i * 17, 40 + (i * 11) % 22);
+    s += `</g>`;
+    s += chip(28, 178, 'QR → Code 27', '#e2f3ea', '#145e3c', 'a-pop', 1.1);
+    for (let i = 0; i < 4; i++) s += `<g class="a-slide" style="animation-delay:${1.3 + i * .22}s"><rect x="172" y="${40 + i * 32}" width="124" height="24" rx="4" fill="#fff" stroke="#1d8656" stroke-width="1.4"/>${squig(182, 55 + i * 32, 60 + (i * 17) % 34)}<text x="290" y="${56 + i*32}" text-anchor="end" class="sm" fill="#1d8656" style="font-size:8.5px">Z${i+1}</text></g>`;
+    return s; },
+  aisread: () => { let s = '';
+    for (let i = 0; i < 3; i++) s += `<g class="a-fly" style="--dx:140px;--dy:${(1 - i) * 22}px;animation-delay:${.3 + i*.2}s"><rect x="14" y="${46 + i * 30}" width="92" height="22" rx="4" fill="#fff" stroke="#1d8656" stroke-width="1.3"/>${squig(22, 60 + i * 30, 52)}</g>`;
+    s += `<g class="a-pop" style="animation-delay:.2s"><rect x="128" y="52" width="74" height="62" rx="14" fill="#7048b8"/><path d="M146 114l-6 12 16-12z" fill="#7048b8"/><text x="165" y="80" text-anchor="middle" class="lbl" fill="#fff">AIS</text><text x="165" y="96" text-anchor="middle" class="sm" fill="#fff" opacity=".85">.chat</text></g>`;
+    s += `<g class="a-spin" style="transform-box:view-box;transform-origin:165px 83px">${Array.from({length: 12}, (_, k) => { const a = k * Math.PI / 6; return `<circle cx="${165 + 44 * Math.cos(a)}" cy="${83 + 44 * Math.sin(a)}" r="2.2" fill="#f2b705"/>`; }).join('')}</g>`;
+    const rows = ['the author explains', 'how teenagers finds', 'their identity. He', 'say that social media'];
+    s += `<g class="a-in" style="animation-delay:1.4s"><rect x="220" y="40" width="94" height="112" rx="8" fill="#fff" stroke="#d6dde8"/><text x="228" y="56" class="sm" fill="#4f2f8c" style="font-size:9px">Abschrift</text></g>`;
+    rows.forEach((r, i) => s += `<text class="a-in mono" style="animation-delay:${1.7 + i * .3}s;font-size:7.6px" x="228" y="${74 + i * 20}" fill="#1e2940">${r}</text>`);
+    s += chip(222, 162, 'Wort für Wort', '#efe9fa', '#4f2f8c', 'a-pop', 3.0);
+    return s; },
+  aiscorrect: () => { let s = `<rect x="12" y="34" width="132" height="122" rx="8" fill="#fff" stroke="#d6dde8"/><text x="22" y="52" class="sm" fill="#4f2f8c" style="font-size:9px">Abschrift</text>`;
+    const lines = [['how teenagers ', 'finds', ''], ['their identity. He ', '', ''], ['', 'say', ' that social'], ['media. ', 'dont', ' judge']];
+    lines.forEach((l, i) => { const y = 72 + i * 22; s += `<text class="mono" style="font-size:8.4px" x="22" y="${y}" fill="#1e2940">${l[0]}<tspan fill="#8f1010" font-weight="800">${l[1]}</tspan>${l[2]}</text>`;
+      if (l[1]){ const x = 22 + l[0].length * 5.05, w = l[1].length * 5.05; s += `<line class="a-draw" style="--l:${w};animation-delay:${.5 + i*.35}s" x1="${x}" y1="${y + 3}" x2="${x + w}" y2="${y + 3}" stroke="#8f1010" stroke-width="2" stroke-linecap="round"/>`; } });
+    s += `<path class="a-draw" style="--l:40;animation-delay:1.6s" d="M152 95h26" stroke="#7048b8" stroke-width="2.5" fill="none" stroke-linecap="round"/><path class="a-in" style="animation-delay:1.9s" d="M172 88l8 7-8 7" stroke="#7048b8" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+    const rows = [['B1 Z3', 'finds → find', 'G'], ['B1 Z4', 'say → says', 'G'], ['B1 Z5', 'dont → don\'t', 'R']];
+    rows.forEach((r, i) => s += `<g class="a-slide" style="animation-delay:${2.0 + i * .35}s"><rect x="190" y="${44 + i * 34}" width="120" height="27" rx="6" fill="#fff" stroke="#d6dde8"/><text x="197" y="${55 + i*34}" class="mono" style="font-size:7.5px" fill="#5d6980">${r[0]} · ${r[2]}</text><text x="197" y="${66 + i*34}" class="mono" style="font-size:8.6px" fill="#1e2940">${r[1]}</text></g>`);
+    s += chip(212, 156, 'nur Text', '#efe9fa', '#4f2f8c', 'a-pop', 3.2);
+    return s; },
+  place: () => { let s = '';
+    const rows = ['finds → find', 'say → says', 'dont → don\'t'];
+    rows.forEach((r, i) => s += `<g class="a-fly" style="--dx:120px;--dy:${-10 + i*16}px;animation-delay:${.4 + i*.4}s"><rect x="12" y="${54 + i*34}" width="92" height="24" rx="6" fill="#fff" stroke="#d6dde8"/><text x="20" y="${70 + i*34}" class="mono" style="font-size:8.5px" fill="#1e2940">${r}</text></g>`);
+    s += sheet(132, 18, 168, 166, { lines: 8, margin: 1 });
+    for (let i = 0; i < 7; i++) s += squig(140, 44 + i * 18, 70 + (i * 19) % 36);
+    s += ul(142, 85, 26, 1.5, 1) + mnote(258, 82, 'G (find)', 1.6) + ul(156, 103, 20, 1.9, 1) + mnote(258, 100, 'G (says)', 2.0) + ul(170, 139, 24, 2.3, 1) + mnote(258, 136, 'R (don\'t)', 2.4);
+    s += chip(140, 162, 'an der richtigen Stelle', '#e2f3ea', '#145e3c', 'a-pop', 2.8);
+    return s; },
+  read: () => { let s = sheet(70, 18, 140, 166, { lines: 8, margin: 1 });
+    for (let i = 0; i < 7; i++) s += squig(80, 44 + i * 18, 64 + (i * 23) % 30);
+    s += `<rect class="a-sweep" style="--sy:118px" x="74" y="34" width="106" height="16" rx="4" fill="#7048b8" opacity=".14"/>`;
+    s += `<g class="a-pop" style="animation-delay:.3s"><circle cx="252" cy="70" r="26" fill="#7048b8"/><path d="M252 54l3.5 12.5L268 70l-12.5 3.5L252 86l-3.5-12.5L236 70l12.5-3.5z" fill="#fff"/></g>`;
+    s += chip(188, 112, 'Zeile für Zeile', '#efe9fa', '#4f2f8c', 'a-pop', .9) + chip(188, 140, 'unsicher → markiert', '#fff1d9', '#7a4500', 'a-pop', 1.4);
+    return s; },
+  correct: () => { let s = sheet(40, 18, 168, 166, { lines: 8, margin: 1 });
+    for (let i = 0; i < 7; i++) s += squig(48, 44 + i * 18, 70 + (i * 19) % 36);
+    s += ul(50, 85, 26, .5, 1) + mnote(166, 82, 'G (find)', .6) + ul(64, 103, 20, .9, 1) + mnote(166, 100, 'G (says)', 1.0) + ul(78, 139, 24, 1.3, 1) + mnote(166, 136, 'R (don\'t)', 1.4);
+    [0, 1, 2].forEach(i => s += `<g class="a-pop" style="animation-delay:${1.9 + i*.25}s;transform-origin:${262}px 150px"><g transform="rotate(${(i - 1) * 9} 262 150)"><rect x="236" y="${60}" width="52" height="68" rx="6" fill="#fff" stroke="#1d8656" stroke-width="1.5"/><path d="M244 76h36M244 86h36M244 96h24" stroke="#1d8656" stroke-width="2" stroke-linecap="round"/><path d="M262 108l2.5 5 5.5.8-4 3.9.9 5.4-4.9-2.6-4.9 2.6.9-5.4-4-3.9 5.5-.8z" fill="#f2b705"/></g></g>`);
+    s += chip(226, 150, 'Übungspool', '#e2f3ea', '#145e3c', 'a-pop', 2.6);
+    return s; },
+  open: () => { let s = `<g class="a-fly" style="--dx:110px;--dy:20px;animation-delay:.5s"><path d="M30 50h40l14 14v62H30z" fill="#fff" stroke="#7048b8" stroke-width="2"/><text x="57" y="98" text-anchor="middle" class="lbl" fill="#7048b8">PDF</text></g>`;
+    s += `<g class="a-pop" style="animation-delay:1.2s"><rect x="110" y="30" width="196" height="148" rx="10" fill="#fff" stroke="#d6dde8" stroke-width="1.5"/><rect x="110" y="30" width="196" height="20" rx="10" fill="#f1f4f9"/><circle cx="122" cy="40" r="3" fill="#efb1b1"/><circle cx="132" cy="40" r="3" fill="#f2d48a"/><circle cx="142" cy="40" r="3" fill="#a9dcbf"/>
+      ${sheet(120, 58, 100, 112, { lines: 6, margin: 1 })}<rect x="228" y="58" width="70" height="112" rx="6" fill="#f1f4f9"/><path d="M236 72h44M236 84h52M236 96h36" stroke="#c3ccda" stroke-width="3" stroke-linecap="round"/><rect x="236" y="140" width="54" height="18" rx="5" fill="#2e56c9"/></g>`;
+    s += ul(130, 92, 22, 1.8, 1) + ul(140, 110, 18, 2.0, 1);
+    return s; },
+  review: () => { let s = sheet(24, 18, 272, 166, { lines: 6, margin: 1 });
+    s += `<text x="36" y="66" font-family="var(--hand)" style="font-family:'Bradley Hand','Segoe Print','Comic Neue',cursive" font-size="17" fill="#1f2f7a">He say that social media</text>`;
+    s += `<line x1="58" y1="72" x2="84" y2="72" stroke="#8f1010" stroke-width="2.6" stroke-dasharray="5 4" opacity=".6"><animate attributeName="opacity" values=".6;.6;0" keyTimes="0;.6;1" dur="2.4s" fill="freeze"/></line>`;
+    s += `<text x="232" y="68" style="font:italic 11px Helvetica,Arial,sans-serif" fill="#8f1010" opacity=".55">G (says)<animate attributeName="opacity" values=".55;.55;1" keyTimes="0;.6;1" dur="2.4s" fill="freeze"/></text>`;
+    s += `<g class="a-pop" style="animation-delay:.4s"><rect x="50" y="84" width="174" height="46" rx="10" fill="#fff" stroke="#d6dde8"/><rect x="58" y="92" width="86" height="30" rx="7" fill="#1d8656"/><path d="M68 107l4 4 8-8" stroke="#fff" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="84" y="111" class="sm" fill="#fff">Annehmen</text><rect x="150" y="92" width="66" height="30" rx="7" fill="#fff" stroke="#f0c4c0"/><text x="183" y="111" class="sm" fill="#b42318" text-anchor="middle">Verwerfen</text></g>`;
+    s += `<g class="a-in" style="animation-delay:1.1s"><path d="M100 160l38-38 9 9-38 38-12 3z" fill="#fff" stroke="#2e56c9" stroke-width="2" stroke-linejoin="round"/><animateTransform attributeName="transform" type="translate" values="0 30;0 0;0 0" keyTimes="0;.5;1" dur="1.4s" begin=".9s" fill="freeze"/></g>`;
+    s += `<circle cx="94" cy="107" r="14" fill="#1d8656" opacity="0"><animate attributeName="opacity" values="0;.45;0" dur=".7s" begin="2s" fill="freeze"/><animate attributeName="r" values="8;22" dur=".7s" begin="2s" fill="freeze"/></circle>`;
+    s += `<line class="a-draw" style="--l:26;animation-delay:2.4s" x1="58" y1="72" x2="84" y2="72" stroke="#8f1010" stroke-width="2.6" stroke-linecap="round"/>`;
+    s += `<g class="a-in" style="animation-delay:2.6s"><path d="M150 152c10-6 20 4 30-2s14-10 24-4" fill="none" stroke="#8f1010" stroke-width="2" stroke-linecap="round"/><text x="150" y="176" class="sm" fill="#2e56c9">eigene Anstreichung</text></g>`;
+    return s; },
+  grade: () => { let s = `<rect x="56" y="12" width="208" height="150" rx="10" fill="#fff" stroke="#d6dde8"/>`;
+    const rows = [['Inhalt', '31', '44'], ['Sprache', '47', '66']];
+    rows.forEach((r, i) => s += `<text x="72" y="${42 + i * 30}" class="lbl" fill="#1e2940">${r[0]}</text><rect x="168" y="${26 + i*30}" width="44" height="23" rx="6" fill="#f1f4f9" stroke="#d6dde8"/><text class="a-in" style="animation-delay:${.5 + i*.6}s" x="206" y="${42 + i*30}" text-anchor="end" font-family="system-ui" font-weight="700" font-size="13" fill="#2e56c9">${r[1]}</text><text x="218" y="${42 + i*30}" class="sm" fill="#5d6980">/ ${r[2]}</text>`);
+    s += `<line x1="72" y1="90" x2="248" y2="90" stroke="#d6dde8"/><text x="72" y="110" class="lbl" fill="#1e2940">Gesamt</text><text class="a-in" style="animation-delay:1.8s" x="212" y="110" text-anchor="end" font-family="system-ui" font-weight="800" font-size="15" fill="#1e2940">78</text><text x="218" y="110" class="sm" fill="#5d6980">/ 110</text>`;
+    s += `<g class="a-pop" style="animation-delay:2.2s"><rect x="72" y="122" width="176" height="30" rx="8" fill="#e5ecfc"/><text x="84" y="142" class="lbl" fill="#1f3f9e">Note</text><text x="236" y="143" text-anchor="end" font-family="system-ui" font-weight="800" font-size="16" fill="#1f3f9e">2</text></g>`;
+    s += `<g class="a-pop" style="animation-delay:.2s"><circle cx="270" cy="24" r="20" fill="#2e56c9"/><path d="M261 24l6.5 6.5 12-13" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+    s += chip(84, 170, 'KI vergibt keine Punkte', '#efe9fa', '#4f2f8c', 'a-pop', 2.8);
+    return s; },
+  foerder: () => { let s = '';
+    const bars = [['Rechtschreibung', 92, 1], ['their / there …', 70, 1], ['3. Person -s', 54, 1], ['Kommas', 30, 0], ['Präpositionen', 18, 0]];
+    bars.forEach((b, i) => s += `<text x="12" y="${40 + i * 26}" class="sm" fill="#1e2940" style="font-size:10px">${b[0]}</text><rect class="a-grow" style="animation-delay:${.2 + i*.12}s" x="96" y="${30 + i * 26}" width="${b[1]}" height="14" rx="4" fill="${b[2] ? '#8f1010' : '#d6dde8'}" opacity="${b[2] ? .85 : 1}"/>${b[2] ? `<path class="a-pop" style="animation-delay:${1.1 + i*.15}s" d="M${102 + b[1]} ${30 + i*26}l2.5 5 5.5.8-4 3.9.9 5.4-4.9-2.6-4.9 2.6.9-5.4-4-3.9 5.5-.8z" fill="#f2b705"/>` : ''}`);
+    s += `<g class="a-pop" style="animation-delay:1.7s">${sheet(214, 20, 94, 162, {})}<text x="224" y="38" class="lbl" fill="#1e2940" style="font-size:10px">Förderblatt</text>`;
+    for (let i = 0; i < 3; i++) s += `<rect x="222" y="${48 + i*42}" width="78" height="34" rx="5" fill="#f1f4f9"/><text x="228" y="${61 + i*42}" class="sm" fill="#8f1010" style="font-size:8.5px">Task ${i+1}</text><path d="M228 ${70 + i*42}h56" stroke="#c3ccda" stroke-width="2.5" stroke-linecap="round"/>`;
+    s += `</g>` + chip(126, 166, 'Basis / Vertiefung', '#e5ecfc', '#1f3f9e', 'a-pop', 2.2);
+    return s; },
+  return: () => { let s = '';
+    const docs = [[30, -6, '#8f1010', 'Klausur'], [118, 0, '#2e56c9', 'Bewertung'], [206, 6, '#1d8656', 'Förderblatt']];
+    docs.forEach((d, i) => s += `<g class="a-pop" style="animation-delay:${.2 + i*.35}s"><g transform="rotate(${d[1]} ${d[0] + 42} 100)"><rect x="${d[0]}" y="34" width="84" height="116" rx="5" fill="#fff" stroke="#d6dde8" stroke-width="1.4"/>
+      <rect x="${d[0] + 8}" y="42" width="${d[3].length * 6 + 12}" height="15" rx="7.5" fill="${d[2]}"/><text x="${d[0] + 14}" y="53" class="sm" fill="#fff" style="font-size:9px">${d[3]}</text>
+      ${i === 0 ? `<path d="M${d[0]+10} 72h62M${d[0]+10} 88h62M${d[0]+10} 104h50M${d[0]+10} 120h58" stroke="#c9d6ec" stroke-width="2.4" stroke-linecap="round"/><path d="M${d[0]+14} 76h22M${d[0]+34} 108h20" stroke="#8f1010" stroke-width="2.4" stroke-linecap="round"/><text x="${d[0]+56}" y="84" style="font:italic 7px Helvetica" fill="#8f1010">G (says)</text>`
+        : i === 1 ? `<path d="M${d[0]+10} 72h40M${d[0]+10} 86h40M${d[0]+10} 100h40" stroke="#c9d6ec" stroke-width="2.4" stroke-linecap="round"/><text x="${d[0]+74}" y="75" text-anchor="end" class="sm" fill="#1e2940" style="font-size:8px">31</text><text x="${d[0]+74}" y="89" text-anchor="end" class="sm" fill="#1e2940" style="font-size:8px">47</text><rect x="${d[0]+8}" y="114" width="68" height="20" rx="5" fill="#e5ecfc"/><text x="${d[0]+14}" y="128" class="sm" fill="#1f3f9e" style="font-size:9px">Note 2</text>`
+        : `<rect x="${d[0]+8}" y="66" width="68" height="22" rx="4" fill="#f1f4f9"/><rect x="${d[0]+8}" y="94" width="68" height="22" rx="4" fill="#f1f4f9"/><rect x="${d[0]+8}" y="122" width="68" height="20" rx="4" fill="#f1f4f9"/><path d="M${d[0]+66} 70l2 4 4.5.6-3.2 3.1.8 4.4-4.1-2.1-4 2.1.8-4.4-3.3-3.1 4.5-.6z" fill="#f2b705"/>`}
+      </g></g>`);
+    s += chip(70, 166, 'ausgedruckt', '#fdf0e1', '#8a4b00', 'a-pop', 1.4) + chip(166, 166, 'mit Lösungen', '#e2f3ea', '#145e3c', 'a-pop', 1.7);
+    return s; },
+  loop: () => { let s = `<g class="a-spin" style="transform-box:view-box;transform-origin:160px 100px"><path d="M160 52a48 48 0 0 1 46 34" fill="none" stroke="#7048b8" stroke-width="5" stroke-linecap="round"/><path d="M200 78l6 9 8-8" fill="none" stroke="#7048b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M160 148a48 48 0 0 1-46-34" fill="none" stroke="#7048b8" stroke-width="5" stroke-linecap="round"/><path d="M120 122l-6-9-8 8" fill="none" stroke="#7048b8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></g>`;
+    s += chip(10, 50, 'verworfen 12', '#fff', '#5d6980', 'a-slide', .3) + chip(10, 80, 'geändert 7', '#fff', '#5d6980', 'a-slide', .5) + chip(10, 110, 'ergänzt 5', '#e5ecfc', '#1f3f9e', 'a-slide', .7);
+    s += `<g class="a-pop" style="animation-delay:.9s">${sheet(226, 36, 84, 128, {})}<text x="234" y="54" class="sm" fill="#1e2940" style="font-size:9px">Korrekturprofil</text><path d="M234 68h60M234 80h52M234 92h62M234 104h44" stroke="#c9d6ec" stroke-width="2.4" stroke-linecap="round"/>
+      <rect class="a-in" style="animation-delay:1.9s" x="230" y="114" width="76" height="22" rx="5" fill="#efe9fa"/><text class="a-in sm" style="animation-delay:2.1s;font-size:8.5px" x="235" y="129" fill="#4f2f8c">+ neue Regel</text></g>`;
+    s += `<g class="a-pop" style="animation-delay:2.5s"><circle cx="160" cy="100" r="18" fill="#2e56c9"/><path d="M152 100l5.5 5.5 10-11" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g><text class="a-in sm" style="animation-delay:2.7s" x="160" y="176" text-anchor="middle" fill="#1f3f9e">Freigabe</text>`;
+    return s; }
+};
+
+/* ===================== Steuerung ===================== */
+function go(i, user){
+  step = Math.max(0, Math.min(steps.length - 1, i));
+  if (user) stop();
+  const s = steps[step], n = steps.filter(x => !x.loop).length;
+  $('#count').textContent = `${step + 1} / ${steps.length}`;
+  document.querySelectorAll('#lanes .node').forEach(g => { const k = +g.dataset.i; g.classList.toggle('cur', k === step); g.classList.toggle('done', k < step); g.classList.toggle('future', k > step && !s.loop); });
+  const L = G.lens[Math.min(step, n - 1)], fd = $('#flowDone'); fd.style.strokeDashoffset = G.total - L;
+  placeToken(L);
+  ['loopPath', 'loopHead', 'loopLbl'].forEach(id => $('#' + id).classList.toggle('on', !!s.loop));
+  document.querySelectorAll('.actors [data-a]').forEach(el => el.classList.toggle('on', s.who.includes(el.dataset.a)));
+  const kiName = w => w === 'ki' ? 'KI (' + ROUTES[route].ki + ')' : ACT[w].n;
+  const where = s.loop ? '' : `<span class="where">${s.lane === 'ki' ? 'bei ' + ROUTES[route].ki : PLACE[s.lane]}</span>`;
+  $('#dbody').innerHTML = `<div class="fade"><div class="whorow">${s.who.map(w => `<span class="who" style="background:${ACT[w].c}"><span class="d"></span>${kiName(w)}</span>`).join(s.who.length > 1 ? '<span class="arr">' + (s.loop ? '+' : '→') + '</span>' : '')}${where}</div>
+    <div class="dtitle">${s.loop ? '' : (step + 1) + '. '}${s.t}</div><p class="dtext">${s.x}</p>
+    ${s.look ? `<button class="dlook" data-open="${s.look[0]}"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>${s.look[1]}</button>` : ''}
+    <div class="dpriv${s.warn ? ' warn' : ''}"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 5-3.2 8.3-7 10-3.8-1.7-7-5-7-10V6z"/>${s.warn ? '<path d="M12 9v4M12 16v.5"/>' : '<path d="M9 12l2 2 4-4"/>'}</svg><span>${s.p}</span></div></div>`;
+  $('#scene').innerHTML = `<g class="sc">${SCENES[s.scene]()}</g>`;
+  const dl = document.querySelector('#dbody .dlook'); if (dl) dl.onclick = () => openView(dl.dataset.open);
+}
+function setRoute(r){ if (r === route) return; route = r; buildSteps();
+  document.querySelectorAll('[data-route]').forEach(b => b.classList.toggle('on', b.dataset.route === r));
+  tokenL = 0; drawLanes(true); go(step); }
+function play(){ if (timer){ stop(); return; }
+  if (step >= steps.length - 1) go(0);
+  $('#playTxt').textContent = 'Pause'; $('#playIc').innerHTML = '<path d="M8 5.5h3v13H8zM13 5.5h3v13h-3z" fill="currentColor"/>';
+  timer = setInterval(() => { if (step >= steps.length - 1) return stop(); go(step + 1); }, 5200); }
+function stop(){ clearInterval(timer); timer = null; $('#playTxt').textContent = 'Abspielen'; $('#playIc').innerHTML = '<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>'; }
+$('#prev').onclick = () => go(step - 1, true);
+$('#next').onclick = () => go(step + 1, true);
+$('#play').onclick = play;
+$('#fs').onclick = () => { const st = $('#stage'); if (document.fullscreenElement) document.exitFullscreen(); else if (st.requestFullscreen) st.requestFullscreen(); else if (st.webkitRequestFullscreen) st.webkitRequestFullscreen(); };
+document.querySelectorAll('[data-route]').forEach(b => b.onclick = () => setRoute(b.dataset.route));
+$('#privBtn').onclick = () => { priv = !priv; $('#privBtn').setAttribute('aria-pressed', priv); $('#stage').classList.toggle('showpriv', priv); };
+document.addEventListener('keydown', e => {
+  if (e.target.closest('input,textarea')) return;
+  if (!$('#viewer').hidden){ if (e.key === 'Escape') closeView(); else if ((e.key === 'e' || e.key === 'E') && !$('#coBtn').hidden) toggleCallouts(); return; }
+  if (e.key === 'b' || e.key === 'B') return openView('blank');
+  if (e.key === 'a' || e.key === 'A') return openView('af');
+  if (e.key === 'ArrowRight' || e.key === 'PageDown'){ e.preventDefault(); go(step + 1, true); }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp'){ e.preventDefault(); go(step - 1, true); }
+  else if (e.key === 'd' || e.key === 'D') $('#privBtn').click();
+  else if (e.key === 'k' || e.key === 'K') setRoute(route === 'ais' ? 'claude' : 'ais');
+  else if (e.key === 'p' || e.key === 'P') play();
+  else if (e.key === 'v' || e.key === 'V') $('#fs').click();
+});
+/* ===================== Bögen und Arbeitsfläche ansehen ===================== */
+// Klausurbogen nach der Geometrie von bogen.py (mm von oben links), gezeichnet in 150 dpi wie in der Arbeitsfläche.
+const MM = 150 / 25.4, PT = 150 / 72, PW = Math.round(210 * MM), PH = Math.round(297 * MM);
+const META = JSON.parse(document.getElementById('demoMeta').textContent);
+const HAND = '"Segoe Print","Bradley Hand","Comic Sans MS","Chalkboard SE","Comic Neue",cursive', HS = 34, INK = '#1c2a6b';
+const LINES = [Math.round(42 * MM)].concat(Array.from({ length: 23 }, (_, k) => Math.round((52 + 10 * k) * MM)));
+const LT = Math.round(19.5 * MM), RT = Math.round(157.5 * MM - 10), X0 = Math.round(21.5 * MM), MAXW = Math.round(134 * MM);
+const esc2 = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const mctx = document.createElement('canvas').getContext('2d');
+const tw2 = t => { mctx.font = `${HS}px ${HAND}`; return mctx.measureText(t).width; };
+
+// Erfundene Schülertexte (EF, Kommentar zu einem Artikel über Social Media und Identität) mit typischen Fehlern
+const DEMO = [
+  { code: '27', blaetter: [[
+      'In the article "Who am I online?" the autor explains how teenagers finds their identity in times of social media. He say that young people compare theirself with others all the time and that this can be dangerous for their self-esteem. Furthermore he points out that friends who support you are more important then likes.',
+      'In my opinion the author is right, because I made similar experiences. When I was thirteen I posted a picture and nobody liked it, so I was very sad. But my friends told me that this dont matter.'],
+    ['All in all social media is not only bad. It can help to find people with the same interests, if you use it in a responsible way.']],
+    sug: [['autor', 'R', 'author', 'RS', 's'], ['finds', 'G', 'find', 'SVA', 's'], ['say', 'G', 'says', 'SVA', 's'], ['theirself', 'G', 'themselves', 'WF', 'u'],
+      ['Furthermore', 'Z', 'Furthermore,', 'KOM', 'e', 'gap'], ['then', 'R', 'than', 'VW', 's'], ['made', 'W', 'had', 'WW', 'e'], ['dont', 'G', "doesn't", 'VERB', 's'],
+      ['bad.', 'A', 'negative', 'WW', 'e']] },
+  { code: '41', blaetter: [[
+      'The text "Who am I online?" deals with the question how social media influences the identity of teenagers. The author describes, that many young people only show the best side of their life. This leads to a lot of pressure, because everyone wants to be perfect. In addition he mentions that it is important to have a strong personality.',
+      'I agree with the author in many points. For example many of my friends spend four hours a day on Instagram and they are often in a bad mood after it.']],
+    sug: [['question', 'W', 'question of', 'PRAEP', 'e', 'gap'], ['describes,', 'Z', '-', 'KOM', 's', 'gap'], ['addition', 'Z', 'addition,', 'KOM', 'e', 'gap'], ['in', 'Präp', 'on', 'PRAEP', 's']] },
+  { code: '63', blaetter: [[
+      'In the article the author write about teenagers and social media. He think that social media is very important for the identity of young people.',
+      'I think he is right, because on social media you can see what other people do and than you want to be like them. But its not good if you only look at other people. People should be more happy with themself.',
+      'In my opinion schools should teach students how to use social media in a good way.']],
+    sug: [['write', 'G', 'writes', 'SVA', 's'], ['think', 'G', 'thinks', 'SVA', 's'], ['than', 'R', 'then', 'VW', 's'], ['its', 'R', "it's", 'VW', 's'],
+      ['more happy', 'G', 'happier', 'KOMP', 's'], ['themself.', 'G', 'themselves', 'WF', 'u'], ['good way.', 'A', 'responsibly', 'WW', 'e']] }];
+
+// Zeilenumbruch mit gemessenen Wortpositionen
+function layoutText(paras){
+  const out = []; let k = 1;
+  paras.forEach((p, pi) => {                         // neuer Absatz: eingerückt, ohne Leerzeile
+    let line = [], x = X0 + (pi ? 60 : 0);
+    const flush = () => { if (line.length) out.push({ k, words: line }); line = []; x = X0; k++; };
+    p.split(' ').forEach(w => { const ww = tw2(w), sp = line.length ? tw2(' ') : 0;
+      if (line.length && x + sp + ww > X0 + MAXW) flush();
+      if (!line.length && x === X0 + 60 && pi === 0) x = X0;
+      const x0 = x + (line.length ? tw2(' ') : 0); line.push({ w, x0, x1: x0 + ww, xc: x0 + tw2(w.replace(/[.,!?"]+$/, '')) }); x = x0 + ww; });
+    flush(); });
+  return out;
+}
+function qrSvg(key, xmm, ymm, smm){ const m = META.qr[key]; if (!m) return ''; const n = m.length, q = smm / (n + 8);
+  let h = ''; m.forEach((row, r) => [...row].forEach((c, ci) => { if (c === '1') h += `M${((xmm + (ci + 4) * q) * MM).toFixed(1)} ${((ymm + (r + 4) * q) * MM).toFixed(1)}h${(q * MM).toFixed(2)}v${(q * MM).toFixed(2)}h-${(q * MM).toFixed(2)}z`; }));
+  return `<path d="${h}" fill="#000"/>`; }
+function bogenSvg(code, blatt, lines, o = {}){
+  const t = (x, y, pt, s, a = {}) => `<text x="${(x * MM).toFixed(1)}" y="${(y * MM).toFixed(1)}" font-family="Helvetica,Arial,sans-serif" font-size="${(pt * PT).toFixed(1)}"${a.b ? ' font-weight="700"' : ''}${a.i ? ' font-style="italic"' : ''}${a.c ? ' text-anchor="middle"' : ''}${a.r ? ' text-anchor="end"' : ''} fill="${a.f || '#000'}">${esc2(s)}</text>`;
+  const r = (x, y, w, h, a = '') => `<rect x="${(x * MM).toFixed(1)}" y="${(y * MM).toFixed(1)}" width="${(w * MM).toFixed(1)}" height="${(h * MM).toFixed(1)}" ${a}/>`;
+  const L = (x1, y1, x2, y2, col, w, dash = '') => `<line x1="${(x1 * MM).toFixed(1)}" y1="${(y1 * MM).toFixed(1)}" x2="${(x2 * MM).toFixed(1)}" y2="${(y2 * MM).toFixed(1)}" stroke="${col}" stroke-width="${(w * PT).toFixed(2)}"${dash ? ` stroke-dasharray="${dash}"` : ''}/>`;
+  let h = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${o.vb || `0 0 ${PW} ${PH}`}" width="${o.w || PW}" height="${o.h || PH}"><rect x="0" y="0" width="${PW}" height="${PH}" fill="#fff"/>`;
+  [[8, 8], [196, 8], [8, 283], [196, 283]].forEach(([x, y]) => h += r(x, y, 6, 6, 'fill="#000"'));
+  h += t(20, 17, 12, 'Englisch · Klausur', { b: 1 }) + t(20, 23.5, 9.5, 'Kurs: ______________    Datum: ______________') + t(20, 29, 8, 'Bitte keinen Namen eintragen – dein Code steht oben rechts.', { i: 1, f: '#737373' });
+  h += t(20, 36, 9, 'Auf diesem Blatt bearbeite ich Aufgabe:');
+  ['1', '2', '3'].forEach((a, i) => { const bx = 82 + i * 14; h += r(bx, 33, 4.2, 4.2, `fill="none" stroke="#000" stroke-width="${(0.8 * PT).toFixed(2)}"`) + t(bx + 5.5, 36, 9, a);
+    if (o.task && o.task.includes(i + 1)) h += `<path d="M${((bx + .6) * MM).toFixed(1)} ${(35.2 * MM).toFixed(1)}l${(1.4 * MM).toFixed(1)} ${(1.4 * MM).toFixed(1)}l${(2.6 * MM).toFixed(1)} -${(3.6 * MM).toFixed(1)}" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`; });
+  h += `<rect x="${(128 * MM).toFixed(1)}" y="${(12 * MM).toFixed(1)}" width="${(34 * MM).toFixed(1)}" height="${(25 * MM).toFixed(1)}" rx="${(2 * MM).toFixed(1)}" fill="none" stroke="#000" stroke-width="${(0.8 * PT).toFixed(2)}"/>`;
+  h += t(145, 16.5, 7.5, 'CODE', { c: 1, f: '#737373' }) + t(145, 26, 22, code, { c: 1, b: 1 }) + t(145, 33, 8.5, `Blatt ${blatt}`, { c: 1 });
+  h += qrSvg(`${code}|${blatt}`, 166, 12, 26);
+  h += L(20, 42, 202, 42, '#999', .6) + L(158, 45, 158, 282, '#b3c9e6', .8) + t(180, 48, 6.5, 'KORREKTURRAND – freilassen', { c: 1, f: '#8c9eb8' });
+  for (let i = 0; i < 23; i++){ const y = 52 + i * 10; h += L(20, y, 158, y, '#b3c9e6', .5) + L(158, y, 202, y, '#b3c9e6', .5, '4 8') + t(18, y - .35, 6, String(i + 1), { r: 1, f: '#8c9eb8' }); }
+  h += t(105, 289, 6.8, 'Dunkler Kugelschreiber · nur auf den Linien schreiben · Streichungen mit einem Strich · Rückseite frei lassen', { c: 1, f: '#737373' }) + t(105, 292.5, 6.8, `Code ${code} · Blatt ${blatt}`, { c: 1, f: '#737373' });
+  (lines || []).forEach((ln, li) => { const y = LINES[ln.k] - 8 + ((li * 7) % 5) - 2;
+    h += `<text x="${Math.round(ln.words[0].x0)}" y="${y}" font-family='${HAND}' font-size="${HS}" fill="${INK}" xml:space="preserve">${esc2(ln.words.map(w => w.w).join(' '))}</text>`; });
+  return h + (o.extra || '') + '</svg>';
+}
+const svgUrl = svg => 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+
+// Testdaten für die eingebettete Arbeitsfläche
+let DEMO_CACHE = null;
+function demoPages(){
+  if (DEMO_CACHE) return DEMO_CACHE;
+  DEMO_CACHE = DEMO.map(d => ({ d, pages: d.blaetter.map(paras => layoutText(paras)) }));
+  return DEMO_CACHE;
+}
+function demoData(){
+  const CONF = { s: 'sicher', e: 'ermessen', u: 'unsicher' };
+  const codes = demoPages().map(({ d, pages }) => {
+    const sug = []; let words = 0;
+    const flat = []; pages.forEach((ls, pi) => ls.forEach(l => l.words.forEach(w => { flat.push({ pi, k: l.k, w }); words++; })));
+    d.sug.forEach(([phrase, sign, corr, muster, conf, gap, nth], si) => {
+      const toks = phrase.split(' '); let seen = 0, hit = -1;
+      for (let i = 0; i <= flat.length - toks.length; i++){ if (toks.every((t, j) => flat[i + j].w.w === t) && ++seen === (nth || 1)){ hit = i; break; } }
+      if (hit < 0){ console.warn('nicht gefunden', d.code, phrase); return; }
+      const part = flat.slice(hit, hit + toks.length), byLine = [];
+      part.forEach(p => { const L = byLine.find(b => b.k === p.k && b.pi === p.pi); if (L) L.x1 = p.w.xc; else byLine.push({ pi: p.pi, k: p.k, x0: p.w.x0, x1: p.w.xc }); });
+      const segs = gap ? [(() => { const b = byLine[byLine.length - 1], x = phrase.endsWith(',') ? b.x1 + 3 : b.x1; return [Math.round(x - 8), Math.round(x + 18), LINES[b.k] + 4, b.k, 'gap']; })()]
+                       : byLine.map(b => [Math.round(b.x0), Math.round(b.x1), LINES[b.k] + 4, b.k]);
+      sug.push({ id: `${d.code}-${String(si + 1).padStart(2, '0')}`, page: byLine[0].pi, segs, line: byLine[0].k, sign, corr, conf: CONF[conf], muster });
+    });
+    return { code: d.code, woerter: words, sug, pages: pages.map((ls, pi) => ({ img: svgUrl(bogenSvg(d.code, pi + 1, ls, { task: pi ? [3] : [1, 2] })), w: PW, h: PH, lines: LINES, side: 'R', lt: LT, rt: RT,
+      edges: Object.fromEntries(ls.map(l => [l.k, [LT, Math.round(l.words[l.words.length - 1].x1)]])) })) };
+  });
+  return { format: 'korrektur-paket', version: 2, paket_id: 'pitch-demo-1', klausur: { id: 'EF-E-DEMO', titel: 'EF Englisch, Klausur 2 (Demo)', datum: '16.11.2026' },
+    muster: Object.fromEntries(Object.entries(META.pool).map(([k, v]) => [k, v.titel || k])), pool: META.pool, eh: META.eh, schluessel: META.schluessel, codes };
+}
+
+// Ansicht: leerer Bogen mit Erklärungen, ausgefüllte Bögen, Arbeitsfläche live
+// Hervorhebungen: Rahmen um das Element (verdecken nichts), Leitlinie vom Rahmenrand zur Beschriftung
+const CALLOUTS = [
+  { boxes: [[6, 6, 10, 10], [194, 6, 10, 10], [6, 281, 10, 10], [194, 281, 10, 10]], side: 'L', ly: 40, t: 'Ankerpunkte', s: 'Daran richtet die Arbeitsfläche jede Seite aus.' },
+  { boxes: [[19, 26, 92, 4.5]], side: 'L', ly: 84, t: 'Kein Namensfeld', s: 'Nur Kurs und Datum.' },
+  { boxes: [[14, 46, 5.5, 237]], side: 'L', ly: 140, t: 'Nummerierte Zeilen', s: 'Jede Anstreichung sitzt an der richtigen Stelle.' },
+  { boxes: [[126, 10, 38, 29]], side: 'R', ly: 22, t: 'Code statt Name', s: 'Wird bei jeder Klausur neu verteilt.' },
+  { boxes: [[164.5, 10.5, 29, 29]], side: 'R', ly: 62, t: 'QR-Code', s: 'Code und Blatt, maschinenlesbar.' },
+  { boxes: [[159, 44, 44, 239]], side: 'R', ly: 170, t: 'Korrekturrand', s: 'Platz für Zeichen und Positivkorrektur.' }];
+function blankView(){
+  const PAD = 760, F = 'font-family="system-ui,-apple-system,Segoe UI,sans-serif"';
+  const ext = CALLOUTS.map((c, i) => {
+    const lx = c.side === 'L' ? -60 : PW + 60, ly = c.ly * MM, tx = c.side === 'L' ? lx - 20 : lx + 20, an = c.side === 'L' ? 'end' : 'start';
+    const [bx, by, bw, bh] = c.boxes[0].map(v => v * MM);
+    const ex = c.side === 'L' ? bx : bx + bw, ey = Math.max(by + 10, Math.min(by + bh - 10, ly));     // Leitlinie startet am Rahmenrand
+    return `<g class="co" style="animation-delay:${.3 + i * .22}s">${c.boxes.map(b => { const [x, y, w, h] = b.map(v => v * MM);
+        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="12" fill="rgba(46,86,201,.07)" stroke="#2e56c9" stroke-width="5"/>`; }).join('')}
+      <path d="M${ex} ${ey} L${c.side === 'L' ? lx + 40 : lx - 40} ${ly} L${lx} ${ly}" fill="none" stroke="#2e56c9" stroke-width="4"/><circle cx="${ex}" cy="${ey}" r="7" fill="#2e56c9"/>
+      <text x="${tx}" y="${ly - 6}" text-anchor="${an}" ${F} font-weight="700" font-size="44" fill="#1e2940">${c.t}</text>
+      <text x="${tx}" y="${ly + 44}" text-anchor="${an}" ${F} font-size="34" fill="#5d6980">${c.s}</text></g>`; }).join('');
+  return bogenSvg('27', 1, null, { vb: `${-PAD} -40 ${PW + 2 * PAD} ${PH + 80}`, w: '100%', h: '100%', extra: ext });
+}
+function filledView(){
+  return `<div class="sheets">${demoPages().flatMap(({ d, pages }) => pages.map((ls, pi) => `<figure class="sheet" tabindex="0"><img alt="Code ${d.code}, Blatt ${pi + 1}" src="${svgUrl(bogenSvg(d.code, pi + 1, ls, { task: pi ? [3] : [1, 2] }))}"><figcaption>Code ${d.code}, Blatt ${pi + 1}</figcaption></figure>`)).join('')}</div>`;
+}
+let afBuilt = false;
+function afView(force){
+  const fr = $('#afFrame'); if (afBuilt && !force) return;
+  try { localStorage.removeItem('korrektur-ws:pitch-demo-1'); } catch(_){}
+  const tpl = JSON.parse(document.getElementById('afTpl').textContent), json = JSON.stringify(demoData()).replace(/<\//g, '<\\/');
+  fr.srcdoc = tpl.replace('/*DATA*/', () => json); afBuilt = true;
+}
+const VIEWS = { blank: 'Leerer Bogen', filled: 'Ausgefüllte Bögen', af: 'Arbeitsfläche' };
+function openView(v){
+  stop(); const box = $('#viewer'); box.hidden = false; document.body.classList.add('vopen');
+  box.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  box.querySelectorAll('.vpanel').forEach(p => p.hidden = p.dataset.p !== v);
+  if (v === 'blank') $('#vBlank').innerHTML = blankView();
+  if (v === 'filled' && !$('#vFilled').innerHTML) $('#vFilled').innerHTML = filledView();
+  if (v === 'af') afView();
+  $('#vNote').textContent = { blank: 'Der Klausurbogen, wie er ausgedruckt wird.', filled: 'Erfundene Beispieltexte. Antippen zum Vergrößern.', af: 'Live: die echte Arbeitsfläche mit erfundenen Daten. Alles lässt sich ausprobieren.' }[v];
+  $('#vReset').hidden = v !== 'af'; $('#coBtn').hidden = v !== 'blank';
+}
+function toggleCallouts(){ const on = $('#coBtn').getAttribute('aria-pressed') !== 'true';
+  $('#coBtn').setAttribute('aria-pressed', on); $('#vBlank').classList.toggle('nocall', !on); }
+function closeView(){ $('#viewer').hidden = true; document.body.classList.remove('vopen'); const z = document.querySelector('.sheet.big'); if (z) z.classList.remove('big'); }
+$('#viewer').addEventListener('click', e => {
+  const b = e.target.closest('[data-v]'); if (b) return openView(b.dataset.v);
+  const f = e.target.closest('.sheet'); if (f){ const was = f.classList.contains('big'); document.querySelectorAll('.sheet.big').forEach(x => x.classList.remove('big')); if (!was) f.classList.add('big'); return; }
+  if (e.target.closest('#vClose')) closeView();
+  if (e.target.closest('#vReset')) afView(true);
+  if (e.target.closest('#coBtn')) toggleCallouts();
+});
+document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openView(b.dataset.open));
+
+hero(); buildSteps(); drawLanes(); go(0);
+</script>
+</body>
+</html>
